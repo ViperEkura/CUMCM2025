@@ -102,6 +102,25 @@ def filter_outliers_iqr(df: pd.DataFrame, feature_cols: List[str], k=1.5):
     return df[mask].reset_index(drop=True)
 
 def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
+    def get_display_width(text):
+        """计算字符串的显示宽度（中文算2个字符，英文算1个）"""
+        width = 0
+        for char in text:
+            if '\u4e00' <= char <= '\u9fff':
+                width += 2
+            else:
+                width += 1
+        return width
+    
+    def pad_to_width(text, width, align='left'):
+        """将文本填充到指定显示宽度"""
+        text_width = get_display_width(text)
+        padding = max(0, width - text_width)
+        if align == 'left':
+            return text + ' ' * padding
+        else:  # right align
+            return ' ' * padding + text
+    
     def get_significance_star(p_value):
         """获取显著性星号标记"""
         if p_value < 0.001:
@@ -135,18 +154,21 @@ def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
     r_squared = 1 - (SSE / SST)
     adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - k - 1)
     
-    # 动态计算列宽
-    max_name_len = max(len(name) for name in ['截距'] + feature_names)
-    col_width = max(max_name_len, 15)  # 至少15个字符宽
+    # 计算各列宽度
+    name_width = max(max(get_display_width(name) for name in feature_names), 
+                    get_display_width('截距'), 
+                    get_display_width('变量')) + 2
     
-    print("="*(col_width + 60))
+    # 输出F检验结果
+    separator = "=" * (name_width + 55)
+    print(separator)
     print("F检验 - 模型整体显著性")
-    print("="*(col_width + 60))
-    print(f"{'F统计量:':<{col_width}} F({k},{n-k-1}) = {f_statistic:.4f}")
-    print(f"{'P值:':<{col_width}} {f_pvalue:.4f}")
-    print(f"{'模型显著性:':<{col_width}} {'显著' if f_pvalue < 0.05 else '不显著'}")
-    print(f"{'R²:':<{col_width}} {r_squared:.4f}")
-    print(f"{'调整R²:':<{col_width}} {adjusted_r_squared:.4f}")
+    print(separator)
+    print(f"{pad_to_width('F统计量:', name_width)} F({k},{n-k-1}) = {f_statistic:.4f}")
+    print(f"{pad_to_width('P值:', name_width)} {f_pvalue:.4f}")
+    print(f"{pad_to_width('模型显著性:', name_width)} {'显著' if f_pvalue < 0.05 else '不显著'}")
+    print(f"{pad_to_width('R²:', name_width)} {r_squared:.4f}")
+    print(f"{pad_to_width('调整R²:', name_width)} {adjusted_r_squared:.4f}")
     
     # 3. t检验
     try:
@@ -155,22 +177,31 @@ def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
         covariance_matrix = MSE * np.linalg.inv(X_design.T @ X_design)
         standard_errors = np.sqrt(np.diag(covariance_matrix))
         
-        print("\n" + "="*(col_width + 60))
+        print("\n" + separator)
         print("t检验 - 各个变量显著性")
-        print("="*(col_width + 60))
+        print(separator)
         
         # 表头
-        header = f"{'变量':<{col_width}} {'系数':>10} {'标准误':>10} {'t值':>10} {'P值':>10} {'显著性':>8}"
+        header = (pad_to_width('变量', name_width) + 
+                 pad_to_width('系数', 10, 'right') +
+                 pad_to_width('标准误', 10, 'right') +
+                 pad_to_width('t值', 10, 'right') +
+                 pad_to_width('P值', 10, 'right') +
+                 pad_to_width('显著性', 8, 'right'))
         print(header)
-        print("-"*(col_width + 60))
+        print("-" * (name_width + 55))
         
         # 截距项的t检验
         t_value_intercept = intercept / standard_errors[0]
         p_value_intercept = 2 * (1 - stats.t.cdf(abs(t_value_intercept), n - k - 1))
         
         sig = get_significance_star(p_value_intercept)
-        row = f"{'截距':<{col_width}} {intercept:>10.4f} {standard_errors[0]:>10.4f} " \
-              f"{t_value_intercept:>10.4f} {p_value_intercept:>10.4f} {sig:>8}"
+        row = (pad_to_width('截距', name_width) +
+               pad_to_width(f"{intercept:.4f}", 10, 'right') +
+               pad_to_width(f"{standard_errors[0]:.4f}", 10, 'right') +
+               pad_to_width(f"{t_value_intercept:.4f}", 10, 'right') +
+               pad_to_width(f"{p_value_intercept:.4f}", 10, 'right') +
+               pad_to_width(sig, 8, 'right'))
         print(row)
         
         # 各个特征的t检验
@@ -179,14 +210,18 @@ def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
             p_value = 2 * (1 - stats.t.cdf(abs(t_value), n - k - 1))
             
             sig = get_significance_star(p_value)
-            row = f"{name:<{col_width}} {coef[i]:>10.4f} {standard_errors[i+1]:>10.4f} " \
-                  f"{t_value:>10.4f} {p_value:>10.4f} {sig:>8}"
+            row = (pad_to_width(name, name_width) +
+                   pad_to_width(f"{coef[i]:.4f}", 10, 'right') +
+                   pad_to_width(f"{standard_errors[i+1]:.4f}", 10, 'right') +
+                   pad_to_width(f"{t_value:.4f}", 10, 'right') +
+                   pad_to_width(f"{p_value:.4f}", 10, 'right') +
+                   pad_to_width(sig, 8, 'right'))
             print(row)
         
     except Exception as e:
         print(f"警告: 无法计算t检验: {e}")
         print("可能原因: 设计矩阵不满秩或存在多重共线性")
     
-    print("-"*(col_width + 60))
+    print("-" * (name_width + 55))
     print("显著性水平: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1")
-    print("="*(col_width + 60))
+    print("=" * (name_width + 55))
