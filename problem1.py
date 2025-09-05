@@ -34,14 +34,14 @@ def analyze_data(df: pd.DataFrame):
 
 
 def beta_regression(df: pd.DataFrame):
-    x_col = ['检测孕周', '孕妇BMI', '原始读段数','唯一比对的读段数', '被过滤掉读段数的比例', 
+    x_col = ['年龄', '检测孕周', '孕妇BMI', '原始读段数','唯一比对的读段数', '被过滤掉读段数的比例', 
              '在参考基因组上比对的比例', '重复读段的比例', 'X染色体浓度', 'Y染色体的Z值', '13号染色体的Z值', '18号染色体的Z值']
     
     y_col = ['Y染色体浓度']
     
     X = df[x_col].values
     y = df[y_col].values
-    beta_model = BetaRegression()
+    beta_model = BetaRegression(degree=1)
     beta_model.fit(X, y)
     
     metrics = beta_model.evaluate(X, y)
