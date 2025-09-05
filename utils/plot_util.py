@@ -172,9 +172,34 @@ def plot_predicted_vs_actual(y_true, y_pred, title, xlabel, ylabel, show=False, 
         if save_path is None:
             save_path = os.path.join('.', 'plots')
         os.makedirs(save_path, exist_ok=True)
-        plt.savefig(os.path.join(save_path, 'predicted_vs_actual.png'), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(save_path, f'{title}.png'), dpi=300, bbox_inches='tight')
 
     if show:
         plt.show()
+    
+    plt.close()
+
+def plot_scatter(df, x_col, y_col, show=False, save=True, save_path=None, 
+                title=None, xlabel=None, ylabel=None, color="#005794", alpha=0.8):
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df[x_col], df[y_col], c=color, alpha=alpha, edgecolors='w', linewidth=0.5)
+
+    plt.title(title if title else f'{x_col} vs {y_col}')
+    plt.xlabel(xlabel if xlabel else x_col)
+    plt.ylabel(ylabel if ylabel else y_col)
+    
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    if show:
+        plt.show()
+        
+    if save:
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
+        os.makedirs(save_path, exist_ok=True)
+        filename = f'{x_col}_vs_{y_col}_scatter.png'
+        plt.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
     
     plt.close()
