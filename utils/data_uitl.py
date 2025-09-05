@@ -82,3 +82,20 @@ def calcu_first_over_week(df: pd.DataFrame, col_name: str, threshold: float):
     result = df.groupby('孕妇代码').apply(first_over_row)
     result = result.dropna(subset=['检测孕周'])
     return result
+
+
+def filter_outliers_iqr(df: pd.DataFrame, feature_cols: List[str], k=1.5):
+    mask = pd.Series([True] * len(df), index=df.index)
+    
+    for col in feature_cols:
+        
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - k * IQR
+        upper_bound = Q3 + k * IQR
+        
+        col_mask = (df[col] >= lower_bound) & (df[col] <= upper_bound)
+        mask &= col_mask
+
+    return df[mask].reset_index(drop=True)
