@@ -3,7 +3,8 @@
 $$
 \begin{aligned}
 & \min P = \sum_{i=1}^{n} w_i g(t_i) \\
-& \text{s.t.} \\
+& \text{s.t.} 
+\begin{cases} 
 & (1)\quad b_0 < b_1 < b_2 < \cdots < b_{n-1} < b_n \\
 & (2)\quad 10 \leq t_i \leq 25, \quad \forall i = 1,2,\ldots,n \\
 & (3)\quad N_i > 25, \quad \forall i = 1,2,\ldots,n \\
@@ -15,6 +16,7 @@ $$
 \end{cases}
 \quad \forall i = 1,2,\ldots,n \\
 & (6)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
+\end{cases}
 \end{aligned}
 $$
 
