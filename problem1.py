@@ -39,8 +39,8 @@ def beta_regression(df: pd.DataFrame):
     
     y_col = ['Y染色体浓度']
     
-    X = df[x_col]
-    y = df[y_col]
+    X = df[x_col].values
+    y = df[y_col].values
     beta_model = BetaRegression()
     beta_model.fit(X, y)
     
