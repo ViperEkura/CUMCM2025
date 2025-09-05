@@ -39,6 +39,7 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     df["检测孕周"] = df["检测孕周"].apply(calcu_week)
     df["IVF妊娠"] = df["IVF妊娠"].apply(calcu_pregnancy_type)
     df["胎儿是否健康"] = df["胎儿是否健康"].apply(calcu_fetus_health)
+    df = df[(df["GC含量"] >= 0.4) & (df["GC含量"] <= 0.6)]
     
     return df
 
