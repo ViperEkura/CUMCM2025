@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
+
 from scipy.stats import gaussian_kde
 
 
@@ -115,13 +115,11 @@ def plot_spearman_heatmap(df, column_names, show=False, save=True, safe_path=Non
                 cbar_kws={"shrink": .8},
                 annot_kws={"size": 10})
     
-    # 添加标题和样式调整
     plt.title('斯皮尔曼相关系数热力图', fontsize=14, pad=20)
     plt.xticks(rotation=90, fontsize=14)
     plt.yticks(rotation=0, fontsize=14)
     plt.tight_layout()
     
-    # 图像显示与保存逻辑
     if show:
         plt.show()
         
