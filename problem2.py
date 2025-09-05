@@ -131,6 +131,27 @@ def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3,
 
     return parent
 
+def fitness_func(ind: np.ndarray, bmi: np.ndarray):
+    n_seg = (len(ind) - 1) // 2
+    t = ind[n_seg + 1:]
+    
+    Ni = calcu_Ni(ind, bmi)
+    N_total = len(bmi)
+    
+    wi = Ni / N_total
+    
+    g = np.zeros(n_seg)
+    for i in range(n_seg):
+        if t[i] <= 12:
+            g[i] = 1
+        else:
+            g[i] = 2
+
+    P = np.sum(wi * g)
+    
+    return P
+
+
 if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     y, t, bmi = get_params(df)
