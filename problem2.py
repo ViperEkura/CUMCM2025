@@ -174,7 +174,8 @@ def fitness_func(ind: np.ndarray, bmi: np.ndarray):
 def run_genetic_algorithm(bmi: np.ndarray):
     pop_size = 100
     n_gen = 100
-    mutate_rate = 0.1
+    elitism_ratio = 0.2
+    mutate_rate = 0.5
     fitness_fn = lambda ind: fitness_func(ind, bmi)
     
     for n_seg in range(2, 6):
@@ -185,7 +186,17 @@ def run_genetic_algorithm(bmi: np.ndarray):
         crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, bmi)
         mutate_fn = lambda parent: mutate_func(parent, bmi, mutate_rate)
         
-        ga = GeneticAlgorithm(pop_size, n_gen, init_fn, select_fn, crossover_fn, mutate_fn, fitness_fn)
+        ga = GeneticAlgorithm(
+            pop_size, 
+            n_gen, 
+            init_fn, 
+            select_fn, 
+            crossover_fn, 
+            mutate_fn, 
+            fitness_fn, 
+            elitism_ratio
+        )
+        
         ga.run()
 
 
