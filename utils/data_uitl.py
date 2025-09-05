@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 
-from scipy.stats import shapiro
+from scipy.stats import shapiro,  spearmanr
 from typing import List
 
 
@@ -22,7 +22,7 @@ def calcu_week(week_str: str) -> float:
 
     return total_weeks
 
-def calcu_pregnancy_type(type_info: str):
+def calcu_pregnancy_type(type_info: str) -> int:
     trans_dict = { "自然受孕": 1, "IUI（人工授精）": 2, "IVF（试管婴儿）": 3}
     return trans_dict.get(type_info, np.nan)
 
@@ -42,7 +42,7 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def shapiro_test(df: pd.DataFrame, columns: List[str]):
+def shapiro_test(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
     results = []
     for col in columns:
         clean_data = df[col].dropna()
@@ -56,4 +56,15 @@ def shapiro_test(df: pd.DataFrame, columns: List[str]):
     
     return pd.DataFrame(results)
 
-
+def spearman_test(df: pd.DataFrame, target_col: str):
+    results = []
+    for col in df.columns:
+        if col != target_col:
+            corr, p_value = spearmanr(df[target_col], df[col], nan_policy='omit')
+            results.append({
+                'column': col,
+                'correlation': np.around(corr, 3),
+                'p': np.around(p_value, 3)
+            })
+    
+    return pd.DataFrame(results)

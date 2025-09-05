@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.data_uitl import preprocess, shapiro_test
+from utils.data_uitl import preprocess, shapiro_test, spearman_test
 from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap
 
 
@@ -29,6 +29,8 @@ if __name__ == "__main__":
     selectd_col = ["检测孕周"] + selectd_col
     
     plot_spearman_heatmap(df, column_names=selectd_col, safe_path=plot_save_path)
+    spearman_test_res = spearman_test(df[selectd_col], 'Y染色体浓度')
+    spearman_test_res.to_excel('spearman_test_res.xlsx')
     
     
     
