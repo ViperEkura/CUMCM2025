@@ -150,3 +150,31 @@ def plot_qq(residuals, show=False, save=True, save_path=None):
         plt.savefig(os.path.join(save_path, 'qq_plot_residuals.png'))
     
     plt.close()
+    
+
+def plot_predicted_vs_actual(y_true, y_pred, title, xlabel, ylabel, show=False, save=True, save_path=None):
+    y_true = np.array(y_true).ravel()
+    y_pred = np.array(y_pred).ravel()
+
+    plt.figure(figsize=(6, 6))
+    plt.scatter(y_true, y_pred, alpha=0.7, color='blue')
+
+    min_val = min(y_true.min(), y_pred.min())
+    max_val = max(y_true.max(), y_pred.max())
+    plt.plot([min_val, max_val], [min_val, max_val], color='red', linestyle='-', linewidth=2)
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.axis('equal')
+
+    if save:
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
+        os.makedirs(save_path, exist_ok=True)
+        plt.savefig(os.path.join(save_path, 'predicted_vs_actual.png'), dpi=300, bbox_inches='tight')
+
+    if show:
+        plt.show()
+    
+    plt.close()

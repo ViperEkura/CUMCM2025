@@ -3,7 +3,7 @@ import pandas as pd
 import statsmodels.api as sm
 
 from utils.data_uitl import preprocess, shapiro_test, spearman_test
-from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap, plot_qq
+from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap, plot_qq, plot_predicted_vs_actual
 from utils.regression import BetaRegression
 from sklearn.model_selection import train_test_split
 
@@ -53,11 +53,12 @@ def beta_regression(df: pd.DataFrame):
     train_metrics = beta_model.evaluate(X_train, y_train)
     test_metrics = beta_model.evaluate(X_test, y_test)
     
-    test_residuals = test_metrics['residuals']
+    test_residuals = y_test - test_metrics['y_pred']
     test_residuals_df = pd.DataFrame(test_residuals, columns=['Residuals'])
     plot_qq(test_residuals_df['Residuals'], save_path=plot_save_path)
     shapiro_test_res_test = shapiro_test(test_residuals_df, ['Residuals'])
     shapiro_test_res_test.to_excel(os.path.join(table_save_path, 'shapiro_test_residuals.xlsx'))
+    plot_predicted_vs_actual(y_test, test_metrics['y_pred'], '预测值与真实值的关系', '预测值', '真实值', save_path=plot_save_path)
     
     print("\n" + "="*50)
     print("Beta回归 模型评估结果")

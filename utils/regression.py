@@ -27,12 +27,11 @@ class BetaRegression(BaseEstimator, RegressorMixin):
     
     def evaluate(self, X, y):
         y_pred = self.predict(X)
-        residuals = y - y_pred
         return {
             'R2': r2_score(y, y_pred),
             'MSE': mean_squared_error(y, y_pred),
             'MAE': mean_absolute_error(y, y_pred),
-            'residuals': residuals
+            "y_pred": y_pred
         }
         
     def get_coefficients(self):
