@@ -46,7 +46,7 @@ def beta_regression(df: pd.DataFrame):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    beta_model = BetaRegression(degree=1)
+    beta_model = BetaRegression()
     beta_model.fit(X_train, y_train)
     
     train_metrics = beta_model.evaluate(X_train, y_train)
@@ -73,6 +73,15 @@ def beta_regression(df: pd.DataFrame):
     
     print("t检验结果:")
     print(results.summary())
+    
+    print("="*100)
+    coef, intercept, feature_names = beta_model.get_coefficients()
+
+    print("Coefficients:")
+    for name, c in zip(feature_names, coef):
+        print(f"{name:>3}: {c:8.4f}")
+
+    print(f"Intercept:  {intercept:3.4f}")
     
     return beta_model, results
 
