@@ -22,7 +22,6 @@ def calcu_pregnancy_type(type_info: str):
     trans_dict = { "自然受孕": 1, "IUI（人工授精）": 2, "IVF（试管婴儿）": 3}
     return trans_dict.get(type_info, np.nan)
 
-
 def calcu_fetus_health(health_info: str):
     trans_dict = {"否": 0, "是": 1}
     return trans_dict.get(health_info, np.nan)

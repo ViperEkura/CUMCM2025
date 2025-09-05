@@ -2,3 +2,6 @@
 *.xlsx
 *.csv
 *.png
+
+# cache
+*__pycache__/
