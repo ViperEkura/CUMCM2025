@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.base import BaseEstimator, RegressorMixin
 from scipy.special import logit, expit
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-import numpy as np
+
 
 class BetaRegression(BaseEstimator, RegressorMixin):
     def __init__(self, poly_columns=None, degree=3, include_bias=True):

@@ -3,6 +3,7 @@ import pandas as pd
 from utils.data_uitl import preprocess, shapiro_test, spearman_test
 from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap
 from utils.regression import BetaRegression
+from sklearn.model_selection import train_test_split
 
 
 def analyze_data(df: pd.DataFrame):
@@ -36,16 +37,21 @@ def analyze_data(df: pd.DataFrame):
 def beta_regression(df: pd.DataFrame):
     x_col = ['年龄', '检测孕周', '孕妇BMI', '原始读段数','唯一比对的读段数', '被过滤掉读段数的比例', 
              '在参考基因组上比对的比例', '重复读段的比例', 'X染色体浓度', 'Y染色体的Z值', '13号染色体的Z值', '18号染色体的Z值']
-    
     y_col = ['Y染色体浓度']
-    
+
     X = df[x_col].values
     y = df[y_col].values
-    beta_model = BetaRegression(degree=1)
-    beta_model.fit(X, y)
     
-    metrics = beta_model.evaluate(X, y)
-    print(f"模型评估指标: R2={metrics['R2']:.4f}, MSE={metrics['MSE']:.4f}, MAE={metrics['MAE']:.4f}")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    beta_model = BetaRegression(degree=1)
+    beta_model.fit(X_train, y_train)
+    
+    train_metrics = beta_model.evaluate(X_train, y_train)
+    test_metrics = beta_model.evaluate(X_test, y_test)
+    
+    print(f"训练集评估: R2={train_metrics['R2']:.4f}, MSE={train_metrics['MSE']:.4f}, MAE={train_metrics['MAE']:.4f}")
+    print(f"测试集评估: R2={test_metrics['R2']:.4f}, MSE={test_metrics['MSE']:.4f}, MAE={test_metrics['MAE']:.4f}")
 
     return beta_model
 
