@@ -7,8 +7,8 @@ from typing import List
 def get_params(df: pd.DataFrame):
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
     over_week_df = over_week_df.sort_values("孕妇BMI")
-    y, t, bmi = over_week_df["Y染色体浓度"].values, over_week_df["检测孕周"].values, over_week_df["孕妇BMI"].values
-    return y, t, bmi
+    bmi = over_week_df["孕妇BMI"].values
+    return bmi
 
 def calcu_Ni(ind: np.ndarray, bmi: np.ndarray) -> np.ndarray:
     """
@@ -99,7 +99,7 @@ def crossover_func(parent1: np.ndarray, parent2: np.ndarray, bmi: np.ndarray, ma
     
     return parent1
 
-def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3, max_attempts: int = 10):
+def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3, max_attempts: int = 20):
     n_seg = (len(parent) - 1) // 2
     child = np.copy(parent)
     
@@ -171,7 +171,7 @@ def fitness_func(ind: np.ndarray, bmi: np.ndarray):
     
     return P
 
-def run_genetic_algorithm(y: np.ndarray, t: np.ndarray, bmi: np.ndarray):
+def run_genetic_algorithm(bmi: np.ndarray):
     pop_size = 100
     n_gen = 100
     mutate_rate = 0.1
@@ -191,5 +191,5 @@ def run_genetic_algorithm(y: np.ndarray, t: np.ndarray, bmi: np.ndarray):
 
 if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
-    y, t, bmi = get_params(df)
-    run_genetic_algorithm(y, t, bmi)
+    bmi = get_params(df)
+    run_genetic_algorithm(bmi)
