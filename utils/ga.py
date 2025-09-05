@@ -10,7 +10,7 @@ class GeneticAlgorithm:
         init_func: Callable[..., np.ndarray],
         select_func: Callable[[List[np.ndarray], List[float]], Tuple[np.ndarray, np.ndarray]],
         crossover_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
-        mutation_func: Callable[[np.ndarray], np.ndarray],
+        mutate_func: Callable[[np.ndarray], np.ndarray],
         fitness_func: Callable[[np.ndarray], float],
         elitism_ratio: float = 0.1
     ):
@@ -19,7 +19,7 @@ class GeneticAlgorithm:
         self.init_func = init_func
         self.select_func = select_func
         self.crossover_func = crossover_func
-        self.mutation_func = mutation_func
+        self.mutate_func = mutate_func
         self.fitness_func = fitness_func
         self.elitism_ratio = elitism_ratio
         self.n_elite = max(1, int(pop_size * elitism_ratio))
@@ -41,7 +41,7 @@ class GeneticAlgorithm:
             while len(new_population) < self.pop_size:
                 parent1, parent2 = self.select_func(population, fitnesses)  # 选择父母
                 child = self.crossover_func(parent1, parent2)               # 交叉
-                child = self.mutation_func(child)                           # 变异
+                child = self.mutate_func(child)                             # 变异
                 new_population.append(child)
             
             population = new_population

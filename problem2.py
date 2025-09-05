@@ -98,14 +98,47 @@ def crossover_func(parent1: np.ndarray, parent2: np.ndarray, bmi: np.ndarray, ma
     
     return parent1
 
-def mutate_func(parent: np.ndarray):
-    pass
+def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3, max_attempts: int = 10):
+    n_seg = (len(parent) - 1) // 2
+    child = np.copy(parent)
+    
+    if np.random.random() > mutation_rate:
+        return child
+    
+    for _ in range(max_attempts):
 
+        if np.random.random() < 0.5:  
+            # 变异BMI分界点
+            if n_seg > 1:
+                idx = np.random.randint(1, n_seg)
+                low_bound = child[idx-1]
+                high_bound = child[idx+1]
+                new_value = np.random.uniform(low_bound, high_bound)
+                child[idx] = new_value
+        else:  
+            # 变异t值
+            idx = np.random.randint(0, n_seg)
+            new_t = np.random.uniform(10, 25)
+            child[n_seg+1+idx] = new_t
+        
+        # 确保边界条件
+        child[0] = np.min(bmi)
+        child[n_seg] = np.max(bmi)
+        
+        # 检查可行性
+        if valid_func(child, bmi):
+            return child
+
+    return parent
 
 if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     y, t, bmi = get_params(df)
     sol1 = init_sol_func(bmi=bmi, n_seg=5)
     sol2 = init_sol_func(bmi=bmi, n_seg=5)
+    
     child = crossover_func(sol1, sol2, bmi)
+    print(valid_func(child, bmi))
+    
+    child = mutate_func(sol1, bmi)
     print(valid_func(child, bmi))
