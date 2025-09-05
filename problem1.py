@@ -1,8 +1,7 @@
 import os
 import pandas as pd
-import statsmodels.api as sm
 
-from utils.data_uitl import preprocess, shapiro_test, spearman_test
+from utils.data_uitl import preprocess, shapiro_test, spearman_test, custom_statistical_tests
 from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap, plot_qq, plot_predicted_vs_actual
 from utils.regression import BetaRegression
 from sklearn.model_selection import train_test_split
@@ -68,31 +67,9 @@ def beta_regression(df: pd.DataFrame):
     print("-"*50)
     
     print("\nBeta回归 统计检验结果")
-    print("="*50)
-    
-    X_train_sm = sm.add_constant(X_train)
-    y_train_flat = y_train.flatten()
-    
-    model_sm = sm.OLS(y_train_flat, X_train_sm)
-    results = model_sm.fit()
-    
-    f_value = results.fvalue
-    f_pvalue = results.f_pvalue
-    print(f"F检验: F值={f_value:.4f}, p值={f_pvalue:.4f}")
-    
-    print("t检验结果:")
-    print(results.summary())
-    
-    print("="*100)
     coef, intercept, feature_names = beta_model.get_coefficients()
-
-    print("Coefficients:")
-    for name, c in zip(feature_names, coef):
-        print(f"{name:>3}: {c:8.4f}")
-
-    print(f"Intercept:  {intercept:3.4f}")
-    
-    return beta_model, results
+    custom_statistical_tests(beta_model, X_test, y_test, feature_names, coef, intercept)
+    return beta_model
 
 
 if __name__ == "__main__":
@@ -100,5 +77,4 @@ if __name__ == "__main__":
     df = preprocess(df)
     
     analyze_data(df)
-    
-    beta_model, beta_results = beta_regression(df)
+    beta_regression(df)

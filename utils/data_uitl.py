@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 
+from scipy import stats
 from scipy.stats import shapiro, spearmanr
 from typing import List
 
@@ -99,3 +100,93 @@ def filter_outliers_iqr(df: pd.DataFrame, feature_cols: List[str], k=1.5):
         mask &= col_mask
 
     return df[mask].reset_index(drop=True)
+
+def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
+    def get_significance_star(p_value):
+        """获取显著性星号标记"""
+        if p_value < 0.001:
+            return '***'
+        elif p_value < 0.01:
+            return '**'
+        elif p_value < 0.05:
+            return '*'
+        elif p_value < 0.1:
+            return '.'
+        else:
+            return ''
+    
+    y_pred = model.predict(X)
+    
+    n = len(y)
+    k = X.shape[1] 
+    
+    y_mean = np.mean(y)
+    SSR = np.sum((y_pred - y_mean) ** 2)  # 回归平方和
+    SSE = np.sum((y - y_pred) ** 2)       # 残差平方和
+    SST = np.sum((y - y_mean) ** 2)       # 总平方和
+    
+    # 1. F检验 - 模型整体显著性
+    MSR = SSR / k                         # 回归均方
+    MSE = SSE / (n - k - 1)               # 残差均方
+    f_statistic = MSR / MSE               # F统计量
+    f_pvalue = 1 - stats.f.cdf(f_statistic, k, n - k - 1)  # F检验p值
+    
+    # 2. R²和调整R²
+    r_squared = 1 - (SSE / SST)
+    adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - k - 1)
+    
+    # 动态计算列宽
+    max_name_len = max(len(name) for name in ['截距'] + feature_names)
+    col_width = max(max_name_len, 15)  # 至少15个字符宽
+    
+    print("="*(col_width + 60))
+    print("F检验 - 模型整体显著性")
+    print("="*(col_width + 60))
+    print(f"{'F统计量:':<{col_width}} F({k},{n-k-1}) = {f_statistic:.4f}")
+    print(f"{'P值:':<{col_width}} {f_pvalue:.4f}")
+    print(f"{'模型显著性:':<{col_width}} {'显著' if f_pvalue < 0.05 else '不显著'}")
+    print(f"{'R²:':<{col_width}} {r_squared:.4f}")
+    print(f"{'调整R²:':<{col_width}} {adjusted_r_squared:.4f}")
+    
+    # 3. t检验
+    try:
+        # 计算系数的标准误（需要矩阵运算）
+        X_design = np.column_stack([np.ones(n), X])  # 添加截距列
+        covariance_matrix = MSE * np.linalg.inv(X_design.T @ X_design)
+        standard_errors = np.sqrt(np.diag(covariance_matrix))
+        
+        print("\n" + "="*(col_width + 60))
+        print("t检验 - 各个变量显著性")
+        print("="*(col_width + 60))
+        
+        # 表头
+        header = f"{'变量':<{col_width}} {'系数':>10} {'标准误':>10} {'t值':>10} {'P值':>10} {'显著性':>8}"
+        print(header)
+        print("-"*(col_width + 60))
+        
+        # 截距项的t检验
+        t_value_intercept = intercept / standard_errors[0]
+        p_value_intercept = 2 * (1 - stats.t.cdf(abs(t_value_intercept), n - k - 1))
+        
+        sig = get_significance_star(p_value_intercept)
+        row = f"{'截距':<{col_width}} {intercept:>10.4f} {standard_errors[0]:>10.4f} " \
+              f"{t_value_intercept:>10.4f} {p_value_intercept:>10.4f} {sig:>8}"
+        print(row)
+        
+        # 各个特征的t检验
+        for i, name in enumerate(feature_names):
+            t_value = coef[i] / standard_errors[i+1]
+            p_value = 2 * (1 - stats.t.cdf(abs(t_value), n - k - 1))
+            
+            sig = get_significance_star(p_value)
+            row = f"{name:<{col_width}} {coef[i]:>10.4f} {standard_errors[i+1]:>10.4f} " \
+                  f"{t_value:>10.4f} {p_value:>10.4f} {sig:>8}"
+            print(row)
+        
+    except Exception as e:
+        print(f"警告: 无法计算t检验: {e}")
+        print("可能原因: 设计矩阵不满秩或存在多重共线性")
+    
+    print("-"*(col_width + 60))
+    print("显著性水平: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1")
+    print("="*(col_width + 60))
