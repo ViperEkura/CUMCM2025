@@ -72,7 +72,7 @@ def spearman_test(df: pd.DataFrame, target_col: str):
 
 def calcu_first_over_week(df: pd.DataFrame, col_name: str, threshold: float):
     def first_over_row(group: pd.DataFrame):
-        group = group.sort_values('检测孕周')
+        group = group.sort_values('检测孕周').drop(columns=['孕妇代码'])
         over = group[group[col_name] > threshold]
         if not over.empty:
             return over.iloc[0]
