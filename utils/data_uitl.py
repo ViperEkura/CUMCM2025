@@ -55,3 +55,5 @@ def shapiro_test(df: pd.DataFrame, columns: List[str]):
         results.append({'column': col, 'w': np.around(w, 3), 'p': np.around(p, 3)})
     
     return pd.DataFrame(results)
+
+

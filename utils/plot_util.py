@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 from scipy.stats import gaussian_kde
 
 
@@ -96,4 +98,39 @@ def plot_boxplot(df, column_names, show=False, save=True, safe_path=None, colors
         output_path = os.path.join(safe_path, col_suffix)
         plt.savefig(output_path)
 
+    plt.close()
+    
+def plot_spearman_heatmap(df, column_names, show=False, save=True, safe_path=None):
+    """绘制斯皮尔曼相关系数热力图"""
+    corr_matrix = df[column_names].corr(method='spearman')
+    fig_size = (len(column_names) * 0.8, len(column_names) * 0.8)
+
+    plt.figure(figsize=fig_size)
+    
+    sns.heatmap(corr_matrix, 
+                annot=True, 
+                fmt=".2f", 
+                cmap='coolwarm',
+                square=True, 
+                cbar_kws={"shrink": .8},
+                annot_kws={"size": 10})
+    
+    # 添加标题和样式调整
+    plt.title('斯皮尔曼相关系数热力图', fontsize=14, pad=20)
+    plt.xticks(rotation=90, fontsize=14)
+    plt.yticks(rotation=0, fontsize=14)
+    plt.tight_layout()
+    
+    # 图像显示与保存逻辑
+    if show:
+        plt.show()
+        
+    if save:
+        if safe_path is None:
+            safe_path = os.path.join('.', 'plots')
+            
+        os.makedirs(safe_path, exist_ok=True)
+        output_path = os.path.join(safe_path, 'spearman_corr_heatmap.png')
+        plt.savefig(output_path)
+    
     plt.close()
