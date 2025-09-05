@@ -3,24 +3,25 @@ import pandas as pd
 import statsmodels.api as sm
 
 from utils.data_uitl import preprocess, shapiro_test, spearman_test
-from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap
+from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap, plot_qq
 from utils.regression import BetaRegression
 from sklearn.model_selection import train_test_split
 
 
+plot_save_path = 'analyze_plot'
+table_save_path = 'analyze_table'
+os.makedirs(plot_save_path, exist_ok=True)
+os.makedirs(table_save_path, exist_ok=True)
+
+
 def analyze_data(df: pd.DataFrame):
-    plot_save_path = 'analyze_plot'
-    table_save_path = 'analyze_table'
-    os.makedirs(plot_save_path, exist_ok=True)
-    os.makedirs(table_save_path, exist_ok=True)
-    
-    
-    plot_distribution(df, '年龄', safe_path=plot_save_path)
-    plot_distribution(df, '孕妇BMI', safe_path=plot_save_path)
-    plot_boxplot(df, ['X染色体浓度', 'Y染色体浓度'], safe_path=plot_save_path)
-    plot_boxplot(df, ['X染色体的Z值', 'Y染色体的Z值'], safe_path=plot_save_path)
-    plot_boxplot(df, ['13号染色体的Z值', '18号染色体的Z值', "21号染色体的Z值"], safe_path=plot_save_path)
-    plot_boxplot(df, ['13号染色体的GC含量', '18号染色体的GC含量', '21号染色体的GC含量'], safe_path=plot_save_path)
+
+    plot_distribution(df, '年龄', save_path=plot_save_path)
+    plot_distribution(df, '孕妇BMI', save_path=plot_save_path)
+    plot_boxplot(df, ['X染色体浓度', 'Y染色体浓度'], save_path=plot_save_path)
+    plot_boxplot(df, ['X染色体的Z值', 'Y染色体的Z值'], save_path=plot_save_path)
+    plot_boxplot(df, ['13号染色体的Z值', '18号染色体的Z值', "21号染色体的Z值"], save_path=plot_save_path)
+    plot_boxplot(df, ['13号染色体的GC含量', '18号染色体的GC含量', '21号染色体的GC含量'], save_path=plot_save_path)
     
     selected_col = ['年龄', '孕妇BMI', '原始读段数','唯一比对的读段数', '被过滤掉读段数的比例', '在参考基因组上比对的比例', '重复读段的比例', 
                     'GC含量', 'X染色体浓度', 'Y染色体浓度', 'X染色体的Z值', 'Y染色体的Z值', 
@@ -31,7 +32,7 @@ def analyze_data(df: pd.DataFrame):
     shapiro_test_res.to_excel(os.path.join(table_save_path,'shapiro_test_res.xlsx'))
 
     selected_col = ["检测孕周"] + selected_col
-    plot_spearman_heatmap(df, column_names=selected_col, safe_path=plot_save_path)
+    plot_spearman_heatmap(df, column_names=selected_col, save_path=plot_save_path)
     spearman_test_res = spearman_test(df[selected_col], 'Y染色体浓度')
     spearman_test_res.to_excel(os.path.join(table_save_path,'spearman_test_res.xlsx'))
 
@@ -51,6 +52,13 @@ def beta_regression(df: pd.DataFrame):
     
     train_metrics = beta_model.evaluate(X_train, y_train)
     test_metrics = beta_model.evaluate(X_test, y_test)
+    
+    test_residuals = test_metrics['residuals']
+    test_residuals_df = pd.DataFrame(test_residuals, columns=['Residuals'])
+    plot_qq(test_residuals_df['Residuals'], save_path=plot_save_path)
+    shapiro_test_res_test = shapiro_test(test_residuals_df, ['Residuals'])
+    shapiro_test_res_test.to_excel(os.path.join(table_save_path, 'shapiro_test_residuals.xlsx'))
+    
     print("\n" + "="*50)
     print("Beta回归 模型评估结果")
     print("="*50)

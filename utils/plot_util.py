@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.api as sm
 
 from scipy.stats import gaussian_kde
 
@@ -10,7 +11,7 @@ from scipy.stats import gaussian_kde
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False 
 
-def plot_distribution(df, column_name, show=False, save=True, safe_path=None):
+def plot_distribution(df, column_name, show=False, save=True, save_path=None):
     """绘制指定列的分布直方图"""
     plt.figure(figsize=(9, 6))
     plt.hist(df[column_name], bins='auto', color='#3282F6', edgecolor='black', alpha=0.7, density=True)
@@ -29,17 +30,16 @@ def plot_distribution(df, column_name, show=False, save=True, safe_path=None):
         plt.show()
         
     if save:
-        if safe_path is None:
-            safe_path = os.path.join('.', 'plots')
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
             
-        os.makedirs(safe_path, exist_ok=True)
+        os.makedirs(save_path, exist_ok=True)
         col_suffix = column_name + '_distplot.png'
-        output_path = os.path.join(safe_path, col_suffix)
-        plt.savefig(output_path)
+        plt.savefig(os.path.join(save_path, col_suffix))
     
     plt.close()
 
-def plot_boxplot(df, column_names, show=False, save=True, safe_path=None, colors=None, show_all_points=True):
+def plot_boxplot(df, column_names, show=False, save=True, save_path=None, colors=None, show_all_points=True):
     """绘制多列对比箱线图"""
     plt.figure(figsize=(9, 6))
     
@@ -90,17 +90,16 @@ def plot_boxplot(df, column_names, show=False, save=True, safe_path=None, colors
         plt.show()
         
     if save:
-        if safe_path is None:
-            safe_path = os.path.join('.', 'plots')
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
             
-        os.makedirs(safe_path, exist_ok=True)
+        os.makedirs(save_path, exist_ok=True)
         col_suffix = '_'.join(column_names) + '_boxplot.png'
-        output_path = os.path.join(safe_path, col_suffix)
-        plt.savefig(output_path)
+        plt.savefig(os.path.join(save_path, col_suffix))
 
     plt.close()
     
-def plot_spearman_heatmap(df, column_names, show=False, save=True, safe_path=None):
+def plot_spearman_heatmap(df, column_names, show=False, save=True, save_path=None):
     """绘制斯皮尔曼相关系数热力图"""
     corr_matrix = df[column_names].corr(method='spearman')
     fig_size = (len(column_names) * 0.8, len(column_names) * 0.8)
@@ -124,11 +123,30 @@ def plot_spearman_heatmap(df, column_names, show=False, save=True, safe_path=Non
         plt.show()
         
     if save:
-        if safe_path is None:
-            safe_path = os.path.join('.', 'plots')
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
             
-        os.makedirs(safe_path, exist_ok=True)
-        output_path = os.path.join(safe_path, 'spearman_corr_heatmap.png')
-        plt.savefig(output_path)
+        os.makedirs(save_path, exist_ok=True)
+        plt.savefig(os.path.join(save_path, 'spearman_corr_heatmap.png'))
+    
+    plt.close()
+
+
+def plot_qq(residuals, show=False, save=True, save_path=None):
+    plt.figure(figsize=(6, 6))
+    sm.qqplot(residuals, line='s', ax=plt.gca())
+    plt.title('残差QQ图')
+    plt.xlabel('理论分位数')
+    plt.ylabel('样本分位数')
+    
+    if show:
+        plt.show()
+    
+    if save:
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
+            
+        os.makedirs(save_path, exist_ok=True)
+        plt.savefig(os.path.join(save_path, 'qq_plot_residuals.png'))
     
     plt.close()
