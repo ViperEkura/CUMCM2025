@@ -133,7 +133,7 @@ def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3,
     return parent
 
 def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[float], num_selected: int=2):
-    inverted_fitness = 1.0 / (fitness_values + 1e-6)
+    inverted_fitness = 1.0 / (np.array(fitness_values) + 1e-6)
 
     total_fitness = np.sum(inverted_fitness)
     selection_probs = inverted_fitness / total_fitness
@@ -167,19 +167,29 @@ def fitness_func(ind: np.ndarray, bmi: np.ndarray):
         else:
             g[i] = 2
 
-    P = np.sum(wi * g)
+    P = 2 - np.sum(wi * g)
     
     return P
+
+def run_genetic_algorithm(y: np.ndarray, t: np.ndarray, bmi: np.ndarray):
+    pop_size = 100
+    n_gen = 100
+    mutate_rate = 0.1
+    fitness_fn = lambda ind: fitness_func(ind, bmi)
+    
+    for n_seg in range(2, 6):
+        print(f"Running for n_seg = {n_seg}")
+        print("="*50)
+        init_fn = lambda: init_sol_func(bmi, n_seg)
+        select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
+        crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, bmi)
+        mutate_fn = lambda parent: mutate_func(parent, bmi, mutate_rate)
+        
+        ga = GeneticAlgorithm(pop_size, n_gen, init_fn, select_fn, crossover_fn, mutate_fn, fitness_fn)
+        ga.run()
 
 
 if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     y, t, bmi = get_params(df)
-    sol1 = init_sol_func(bmi=bmi, n_seg=5)
-    sol2 = init_sol_func(bmi=bmi, n_seg=5)
-    
-    child = crossover_func(sol1, sol2, bmi)
-    print(valid_func(child, bmi))
-    
-    child = mutate_func(sol1, bmi)
-    print(valid_func(child, bmi))
+    run_genetic_algorithm(y, t, bmi)

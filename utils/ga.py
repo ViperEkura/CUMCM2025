@@ -28,11 +28,13 @@ class GeneticAlgorithm:
         population = [self.init_func() for _ in range(self.pop_size)]
         best_fitness_history = []
         
-        for _ in range(self.n_gen):
+        for gen in range(self.n_gen):
             fitnesses = [self.fitness_func(individual) for individual in population]
             
             best_fitness = max(fitnesses)
             best_fitness_history.append(best_fitness)
+            
+            print(f"Generation {gen}: Best Fitness = {best_fitness}")
             
             elite_indices = np.argsort(fitnesses)[-self.n_elite:]
             elites = [population[i] for i in elite_indices]
