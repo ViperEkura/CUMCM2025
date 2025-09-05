@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from utils.ga import GeneticAlgorithm
 from utils.data_uitl import preprocess, calcu_first_over_week
+from typing import List
 
 def get_params(df: pd.DataFrame):
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
@@ -130,6 +131,25 @@ def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3,
             return child
 
     return parent
+
+def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[float], num_selected: int=2):
+    inverted_fitness = 1.0 / (fitness_values + 1e-6)
+
+    total_fitness = np.sum(inverted_fitness)
+    selection_probs = inverted_fitness / total_fitness
+    
+    cumulative_probs = np.cumsum(selection_probs)
+    selected_indices = []
+    
+    for _ in range(num_selected):
+        r = np.random.random()
+        for i, cum_prob in enumerate(cumulative_probs):
+            if r <= cum_prob:
+                selected_indices.append(i)
+                break
+    
+
+    return [population[i] for i in selected_indices]
 
 def fitness_func(ind: np.ndarray, bmi: np.ndarray):
     n_seg = (len(ind) - 1) // 2
