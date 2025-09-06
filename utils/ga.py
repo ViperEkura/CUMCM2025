@@ -217,8 +217,8 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progre
     pop_size = 100
     n_gen = 100
     elitism_ratio = 0.1
-    mutate_rate = 0.1
-    crossover_rate = 0.5
+    mutate_rate = 0.4
+    crossover_rate = 0.8
     fitness_fn = lambda ind: fitness_func(ind, params)
     init_fn = lambda: init_sol_func(params, n_seg)
     select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
