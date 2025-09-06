@@ -27,7 +27,7 @@ def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
     best_results = []
     for n_seg in range(n_start, n_end):
         print(f"Running for n_seg = {n_seg}")
-        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=True)
+        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=False)
         best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
 
     print("="*50)
