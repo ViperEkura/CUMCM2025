@@ -16,7 +16,7 @@ from utils.data_uitl import preprocess, calcu_first_over_week
 from typing import Dict
 
 
-def get_init_params(df: pd.DataFrame, n_clusters=3) -> Dict[str, Dict[str, np.ndarray]]:
+def get_ga_params(df: pd.DataFrame, n_clusters=3) -> Dict[str, Dict[str, np.ndarray]]:
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
     over_week_df = over_week_df.sort_values("孕妇BMI")
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
@@ -82,7 +82,7 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progre
     
     return ga.run(show_progress)
 
-def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: bool=True):
+def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6):
     best_results = []
     print("="*50)
     for n_seg in range(n_start, n_end):
@@ -90,37 +90,65 @@ def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: b
         best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=False)
         best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
 
-    if show_res:
-        for res in best_results:
-            bmi_div = res["ind"]
-            n_seg = res["n_seg"]
-            fitness = res["fitnesses"]
-            ti = calcu_Ti(bmi_div, params)
-            
-            print(f"n_seg: {n_seg}")
-            print(f"fitness: {-fitness:.2f}")
-            print(f"b: {np.around(bmi_div, 2)}")
-            print(f"t: {np.around(ti, 2)}")
+    for res in best_results:
+        bmi_div = res["ind"]
+        n_seg = res["n_seg"]
+        fitness = res["fitnesses"]
+        ti = calcu_Ti(bmi_div, params)
+        
+        print(f"n_seg: {n_seg}")
+        print(f"fitness: {-fitness:.2f}")
+        print(f"b: {np.around(bmi_div, 2)}")
+        print(f"t: {np.around(ti, 2)}")
        
-    print("="*50)
     return best_results
 
 
-def run_multi_cluster_ga(
+def show_multi_segments(
     cluster_params: Dict[str, Dict[str, np.ndarray]], 
 ) -> Dict[str, dict]:
     cls0 = cluster_params["cluster_0"]
     cls1 = cluster_params["cluster_1"]
     cls2 = cluster_params["cluster_2"]
     
-    res0 = show_segments(cls0, 2, 3)
-    res1 = show_segments(cls1, 2, 3)
-    res2 = show_segments(cls2, 2, 5)
-        
+    show_segments(cls0, 2, 3)
+    show_segments(cls1, 2, 3)
+    show_segments(cls2, 2, 5)
 
+
+def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: int = 10, noise_std: float = 0.01):
+    """对Y染色体浓度添加扰动后导出结果"""
+    all_inds = []
+    all_tis = []
+    
+    original_params = get_ga_params(df)[cluster_name]
+    
+    for i in range(n_repeats):
+        print(f"Running experiment {i+1}/{n_repeats}")
+        df_perturbed = df.copy()
+        noise = np.random.normal(0, noise_std, size=len(df))
+        df_perturbed["Y染色体浓度"] += noise
+        
+        params = get_ga_params(df_perturbed)[cluster_name]
+        best_ind, _ = run_genetic_algorithm(params, n_seg, show_progress=False)
+        ti_values = calcu_Ti(best_ind, original_params)
+        
+        all_inds.append(best_ind)
+        all_tis.append(ti_values)
+    
+    all_inds = np.stack(all_inds, axis=0)
+    all_tis = np.stack(all_tis, axis=0)
+    
+    return all_inds, all_tis
+
+def multi_error_analysis():
+    inds0, tis0 = error_analysis(df, "cluster_0", 2)
+    inds1, tis1 = error_analysis(df, "cluster_1", 2)
+    inds2, tis2 = error_analysis(df, "cluster_2", 4)
 
 
 if __name__ == "__main__":
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
-    params = get_init_params(df)
-    run_multi_cluster_ga(params)
+    multi_params = get_ga_params(df)
+    show_multi_segments(multi_params)
+

@@ -86,7 +86,6 @@ def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: b
             print(f"b: {np.around(bmi_div, 2)}")
             print(f"t: {np.around(ti, 2)}")
     
-    print("="*50)
     return best_results
 
 
