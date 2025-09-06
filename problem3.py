@@ -13,7 +13,7 @@ from utils.ga import (
     mutate_func
 )
 from utils.data_uitl import analyze_data, preprocess, calcu_first_over_week, set_seed
-from typing import Dict
+from typing import Dict, List, Tuple
 
 
 def get_ga_params(df: pd.DataFrame, n_clusters=3) -> Dict[str, Dict[str, np.ndarray]]:
@@ -57,50 +57,67 @@ def fitness_func(
     
     return -Z
 
-def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
+def run_genetic_algorithm(
+    parameters: Dict[str, np.ndarray], 
+    n_segments: int, 
+    show_progress: bool = False
+) -> Tuple[np.ndarray, np.ndarray]:
+    """运行遗传算法优化过程"""
     pop_size = 100
     n_gen = 100
     elitism_ratio = 0.1
-    mutate_rate = 0.4
+    mutation_rate = 0.4
     crossover_rate = 0.8
-    fitness_fn = lambda ind: fitness_func(ind, params)
-    init_fn = lambda: init_sol_func(params, n_seg)
-    select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
-    crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, params, crossover_rate)
-    mutate_fn = lambda parent: mutate_func(parent, params, mutate_rate)
-
+    
     ga = GeneticAlgorithm(
-        pop_size, 
-        n_gen, 
-        init_fn, 
-        select_fn, 
-        crossover_fn, 
-        mutate_fn, 
-        fitness_fn, 
-        elitism_ratio
+        pop_size=pop_size,
+        n_gen=n_gen,
+        init_func=lambda: init_sol_func(parameters, n_segments),
+        select_func=lambda pop, fitness: roulette_wheel_select(pop, fitness),
+        crossover_func=lambda p1, p2: crossover_func(p1, p2, parameters, crossover_rate),
+        mutate_func=lambda ind: mutate_func(ind, parameters, mutation_rate),
+        fitness_func=lambda ind: fitness_func(ind, parameters),
+        elitism_ratio=elitism_ratio
     )
     
     return ga.run(show_progress)
 
-def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6):
+def evaluate_segments(
+    parameters: Dict[str, np.ndarray], 
+    min_segments: int = 2, 
+    max_segments: int = 6, 
+    show_results: bool = True
+) -> List[Dict]:
+    """评估不同分段数量的结果"""
     best_results = []
-    print("="*50)
-    for n_seg in range(n_start, n_end):
-        print(f"Running for n_seg = {n_seg}")
-        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=False)
-        best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
-
-    for res in best_results:
-        bmi_div = res["ind"]
-        n_seg = res["n_seg"]
-        fitness = res["fitnesses"]
-        ti = calcu_Ti(bmi_div, params)
+    print("=" * 50)
+    
+    for n_segments in range(min_segments, max_segments):
+        print(f"Running for n_segments = {n_segments}")
+        best_individual, best_fitness_history = run_genetic_algorithm(
+            parameters, n_segments, show_progress=False
+        )
         
-        print(f"n_seg: {n_seg}")
-        print(f"fitness: {-fitness:.2f}")
-        print(f"b: {np.around(bmi_div, 2)}")
-        print(f"t: {np.around(ti, 2)}")
-       
+        best_results.append({
+            "n_segments": n_segments, 
+            "individual": best_individual, 
+            "fitness": best_fitness_history[-1]
+        })
+
+    if show_results:
+        print("-" * 30)
+        for result in best_results:
+            bmi_divisions = result["individual"]
+            n_segments = result["n_segments"]
+            fitness_value = result["fitness"]
+            ti_values = calcu_Ti(bmi_divisions, parameters)
+            
+            print(f"Number of segments: {n_segments}")
+            print(f"Fitness value: {-fitness_value:.2f}")
+            print(f"BMI divisions: {np.around(bmi_divisions, 2)}")
+            print(f"TI values: {np.around(ti_values, 2)}")
+            print("-" * 30)
+    
     return best_results
 
 
@@ -111,9 +128,9 @@ def show_multi_segments(
     cls1 = cluster_params["cluster_1"]
     cls2 = cluster_params["cluster_2"]
     
-    show_segments(cls0, 2, 3)
-    show_segments(cls1, 2, 3)
-    show_segments(cls2, 2, 5)
+    evaluate_segments(cls0, 2, 3)
+    evaluate_segments(cls1, 2, 3)
+    evaluate_segments(cls2, 2, 5)
 
 
 def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: int = 10, noise_std: float = 0.01):
