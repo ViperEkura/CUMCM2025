@@ -183,7 +183,7 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray], show_res: bool=True, sh
     
     best_results = []
     
-    for n_seg in range(2, 6):
+    for n_seg in range(2, 10):
         print(f"Running for n_seg = {n_seg}")
         print("="*50)
         init_fn = lambda: init_sol_func(params, n_seg)
@@ -203,27 +203,26 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray], show_res: bool=True, sh
         )
         
         best_ind, best_fitnesses = ga.run(show_progress=show_progress)
-        best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses})
+        best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
 
-    
     if show_res:
         for res in best_results:
             bmi_div = res["ind"]
             n_seg = res["n_seg"]
-            fitness = max(res["fitnesses"])
+            fitness = res["fitnesses"]
             ti = calcu_Ti(bmi_div, params)
             
             print(f"n_seg: {n_seg}")
-            print(f"b: {np.around(bmi_div, 2)}")
-            print(f"t: {np.around(ti, 2)}")
             print(f"fitness: {-fitness:.2f}")
+            print(f"b: {np.around(bmi_div, 2)}")
+            print(f"t: {np.around(ti, 2)}")        
     
     return best_results
 
 
-def error_analysis(df: pd.DataFrame,  n_repeats: int = 10, noise_std: float = 0.01):
-    """对Y染色体浓度添加扰动后运行遗传算法，分析节点(bmi_div)的稳定性"""
-    all_results = {n_seg: [] for n_seg in range(2, 6)}
+def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
+    """对Y染色体浓度添加扰动后运行遗传算法，分析节点(bmi_div)和Ti的稳定性"""
+    all_results = {n_seg: {'ind': [], 'ti': []} for n_seg in range(2, 6)}
     
     for i in range(n_repeats):
         print(f"Running perturbation experiment {i+1}/{n_repeats}")
@@ -233,34 +232,74 @@ def error_analysis(df: pd.DataFrame,  n_repeats: int = 10, noise_std: float = 0.
         df_perturbed["Y染色体浓度"] += noise
         
         params = get_params(df_perturbed)
-        results = run_genetic_algorithm(params, show_res=True, show_progress=False)
+        results = run_genetic_algorithm(params)
         
         for res in results:
             n_seg = res["n_seg"]
-            all_results[n_seg].append(res["ind"])
+            ind = res["ind"]
+            ti = calcu_Ti(ind, params)
+            
+            all_results[n_seg]['ind'].append(ind)
+            all_results[n_seg]['ti'].append(ti)
     
     for n_seg in range(2, 6):
         print(f"\nAnalysis for n_seg = {n_seg}:")
         print("=" * 50)
         
-        segments = all_results[n_seg]
-        if not segments:
+        ind_list = all_results[n_seg]['ind']
+        ti_list = all_results[n_seg]['ti']
+        
+        if not ind_list:
             print(f"No results for n_seg = {n_seg}")
             continue
         
-        segments_array = np.array(segments)
-        means = np.mean(segments_array, axis=0)
-        stds = np.std(segments_array, axis=0)
+        # 分析BMI分段点的稳定性
+        ind_array = np.array(ind_list)
+        ind_means = np.mean(ind_array, axis=0)
+        ind_stds = np.std(ind_array, axis=0)
+        ind_confidence = 1.96 * ind_stds / np.sqrt(len(ind_list))  # 95%置信区间
         
-        print(f"Average BMI division points: {np.around(means, 4)}")
-        print(f"Standard deviations: {np.around(stds, 4)}")
+        print(f"BMI division points (mean ± 95% CI):")
+        for j, (mean, std, conf) in enumerate(zip(ind_means, ind_stds, ind_confidence)):
+            print(f"  Point {j}: {mean:.3f} ± {conf:.3f} (std: {std:.3f})")
         
-        coeff_vars = stds / means
-        print(f"Coefficient of variation: {np.around(coeff_vars, 4)}")
+        # 分析Ti的稳定性
+        ti_array = np.array(ti_list)
+        ti_means = np.mean(ti_array, axis=0)
+        ti_stds = np.std(ti_array, axis=0)
+        ti_confidence = 1.96 * ti_stds / np.sqrt(len(ti_list))  # 95%置信区间
         
-        stable_threshold = 0.05 
-        is_stable = np.all(coeff_vars < stable_threshold)
-        print(f"All points stable (CV < {stable_threshold*100}%): {is_stable}")
+        print(f"\nTi values (mean ± 95% CI):")
+        for j, (mean, std, conf) in enumerate(zip(ti_means, ti_stds, ti_confidence)):
+            print(f"  Segment {j+1}: {mean:.2f} ± {conf:.2f} weeks (std: {std:.2f})")
+        
+        # 计算相对误差百分比
+        print(f"\nRelative errors (%):")
+        ind_relative_error = (ind_stds / ind_means) * 100
+        ti_relative_error = (ti_stds / ti_means) * 100
+        
+        for j, (bmi_err, ti_err) in enumerate(zip(ind_relative_error, ti_relative_error)):
+            print(f"  Segment {j+1}: BMI point ±{bmi_err:.1f}%, Ti value ±{ti_err:.1f}%")
+        
+        # 整体稳定性评估
+        print(f"\nOverall stability assessment:")
+        print(f"  Average BMI point error: ±{np.mean(ind_relative_error):.1f}%")
+        print(f"  Average Ti value error: ±{np.mean(ti_relative_error):.1f}%")
+        print(f"  Max BMI point error: ±{np.max(ind_relative_error):.1f}%")
+        print(f"  Max Ti value error: ±{np.max(ti_relative_error):.1f}%")
+        
+        # 稳定性等级评价
+        max_error = max(np.max(ind_relative_error), np.max(ti_relative_error))
+        if max_error < 2:
+            stability_grade = "Excellent (非常稳定)"
+        elif max_error < 5:
+            stability_grade = "Good (良好)"
+        elif max_error < 10:
+            stability_grade = "Acceptable (可接受)"
+        else:
+            stability_grade = "Poor (不稳定)"
+        
+        print(f"  Stability grade: {stability_grade}")
 
 
 if __name__ == '__main__':
@@ -268,5 +307,5 @@ if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_params(df)
     
-    # run_genetic_algorithm(params)
-    error_analysis(df)
+    run_genetic_algorithm(params)
+    # error_analysis(df)
