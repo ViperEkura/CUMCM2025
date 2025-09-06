@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from utils.ga import run_genetic_algorithm, calcu_Ti
 from utils.data_uitl import preprocess, calcu_first_over_week
-from typing import Dict, List
+from typing import Dict
 
 def set_seed(seed=3407):
     np.random.seed(seed)
@@ -15,13 +15,15 @@ def get_ga_params(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     
     return {"bmi": bmi, "week": week}
 
-def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True, show_progress: bool=True):
+def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
     params = get_ga_params(df)
     best_results = []
     for n_seg in range(n_start, n_end):
-        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress)
+        print(f"Running for n_seg = {n_seg}")
+        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, False)
         best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
 
+    print("="*50)
     if show_res:
         for res in best_results:
             bmi_div = res["ind"]
@@ -38,21 +40,50 @@ def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True, sho
 
 
 def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
-    """对Y染色体浓度添加扰动后运行遗传算法，分析节点(bmi_div)和Ti的稳定性"""
-    result_groups = []
+    """简化版误差分析：对Y染色体浓度添加扰动后分析稳定性"""
+    all_inds = []
+    all_tis = []
+    
+    original_params = get_ga_params(df)
     
     for i in range(n_repeats):
-        print(f"Running perturbation experiment {i+1}/{n_repeats}")
+        print(f"Running experiment {i+1}/{n_repeats}")
         df_perturbed = df.copy()
         noise = np.random.normal(0, noise_std, size=len(df))
         df_perturbed["Y染色体浓度"] += noise
         
         params = get_ga_params(df_perturbed)
-        # 根据之前的数据选择第五个
-        results = run_genetic_algorithm(params, 5, show_progress=False)
-        result_groups.append(results)
+        best_ind, _ = run_genetic_algorithm(params, 5, show_progress=False)
+        ti_values = calcu_Ti(best_ind, original_params)
+        
+        all_inds.append(best_ind[1:-1])
+        all_tis.append(ti_values)
     
-
+    ind_array = np.array(all_inds)
+    ti_array = np.array(all_tis)
+    
+    print("\n误差分析结果 (n_seg=5):")
+    print("=" * 40)
+    
+    print("\nBMI分段点统计:")
+    print("序号 | 均值   | 标准差 | 变异系数(%)")
+    print("-" * 35)
+    for i in range(ind_array.shape[1]):
+        mean = np.mean(ind_array[:, i])
+        std = np.std(ind_array[:, i])
+        cv = (std / mean) * 100
+        print(f"{i:4d} | {mean:6.2f} | {std:6.3f} | {cv:8.2f}")
+    
+    print("\nTi值统计:")
+    print("分段 | 均值   | 标准差 | 变异系数(%)")
+    print("-" * 35)
+    for i in range(ti_array.shape[1]):
+        mean = np.mean(ti_array[:, i])
+        std = np.std(ti_array[:, i])
+        cv = (std / mean) * 100
+        print(f"{i+1:4d} | {mean:6.2f} | {std:6.3f} | {cv:8.2f}")
+        
+    return all_inds, all_tis
 
 
 if __name__ == '__main__':
