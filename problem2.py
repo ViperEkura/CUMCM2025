@@ -125,10 +125,11 @@ def mutate_func(
     return parent
 
 def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[float], num_selected: int=2):
-    inverted_fitness = 1.0 / (np.array(fitness_values) + 1e-6)
-
-    total_fitness = np.sum(inverted_fitness)
-    selection_probs = inverted_fitness / total_fitness
+    max_fitness = np.max(fitness_values)
+    adjusted_fitness = max_fitness - np.array(fitness_values) + 1e-6
+    
+    total_fitness = np.sum(adjusted_fitness)
+    selection_probs = adjusted_fitness / total_fitness
     
     cumulative_probs = np.cumsum(selection_probs)
     selected_indices = []
@@ -149,9 +150,9 @@ def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     
     wi = Ni / N_total
     gi = Ti - 10
-    P = - np.sum(wi * gi)
+    P = np.sum(wi * gi)
     
-    return P
+    return - P
 
 def run_genetic_algorithm(params: Dict[str, np.ndarray]):
     pop_size = 100
