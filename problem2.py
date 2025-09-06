@@ -63,25 +63,37 @@ def init_sol_func(bmi:np.ndarray, n_seg: int):
     
     return ind
 
-def crossover_func(parent1: np.ndarray, parent2: np.ndarray, bmi: np.ndarray, max_attempts: int = 20) -> np.ndarray:
+def crossover_func(parent1: np.ndarray, parent2: np.ndarray, bmi: np.ndarray, crossover_ratio: float = 0.5, max_attempts: int = 20) -> np.ndarray:
     n_seg = (len(parent1) - 1) // 2
-    available_bmi_p = n_seg - 1                         # 可用的BMI交叉点（排除固定的首尾）
-    available_t_p = n_seg                               # 可用的t交叉点
-    n_points = min(3, available_bmi_p, available_t_p)   # 选择较少的交叉点数量，确保不超过可用位置
+    available_bmi_p = n_seg - 1  # 可用的BMI交叉点（排除固定的首尾）
+    available_t_p = n_seg        # 可用的t交叉点
+    
+    # 确保至少交叉1个点
+    n_points = max(1, min(int(n_seg * crossover_ratio), available_bmi_p, available_t_p))
     
     for _ in range(max_attempts):
         child = np.copy(parent1)
         
         # 交叉BMI分界点部分（排除固定的首尾）
-        if available_bmi_p > 0:
-            bmi_crossover_points = np.random.choice(range(1, n_seg), size=n_points, replace=True)
+        if available_bmi_p > 0 and n_points > 0:
+            # 使用replace=False确保选择不同的点
+            bmi_crossover_points = np.random.choice(
+                range(1, n_seg), 
+                size=min(n_points, available_bmi_p), 
+                replace=False
+            )
             for point in bmi_crossover_points:
                 child[point] = parent2[point]
         
         # 交叉t部分
-        t_crossover_points = np.random.choice(range(n_seg), size=n_points, replace=True)
-        for point in t_crossover_points:
-            child[n_seg + 1 + point] = parent2[n_seg + 1 + point]
+        if n_points > 0:
+            t_crossover_points = np.random.choice(
+                range(n_seg), 
+                size=min(n_points, available_t_p), 
+                replace=False
+            )
+            for point in t_crossover_points:
+                child[n_seg + 1 + point] = parent2[n_seg + 1 + point]
         
         # 确保BMI分界点有序
         child[:n_seg+1] = np.sort(child[:n_seg+1])
@@ -97,6 +109,7 @@ def crossover_func(parent1: np.ndarray, parent2: np.ndarray, bmi: np.ndarray, ma
         if valid_func(child, bmi):
             return child
     
+    # 如果多次尝试都失败，返回一个父代
     return parent1
 
 def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3, max_attempts: int = 20):
@@ -106,14 +119,19 @@ def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3,
     if np.random.random() > mutation_rate:
         return child
     
+    bmi_min, bmi_max = np.min(bmi), np.max(bmi)
+    
     for _ in range(max_attempts):
-
-        if np.random.random() < 0.5:  
+        child = np.copy(parent)
+        
+        # 变异类型：BMI或t
+        if np.random.random() < 0.5 and n_seg > 1:  
             # 变异BMI分界点
-            if n_seg > 1:
-                idx = np.random.randint(1, n_seg)
-                low_bound = child[idx-1]
-                high_bound = child[idx+1]
+            idx = np.random.randint(1, n_seg)
+            low_bound = max(bmi_min, child[idx-1])
+            high_bound = min(bmi_max, child[idx+1] if idx < n_seg - 1 else bmi_max)
+            
+            if high_bound > low_bound:
                 new_value = np.random.uniform(low_bound, high_bound)
                 child[idx] = new_value
         else:  
@@ -122,14 +140,14 @@ def mutate_func(parent: np.ndarray, bmi: np.ndarray, mutation_rate: float = 0.3,
             new_t = np.random.uniform(10, 25)
             child[n_seg+1+idx] = new_t
         
-        # 确保边界条件
-        child[0] = np.min(bmi)
-        child[n_seg] = np.max(bmi)
+        # 确保有序和边界
+        child[:n_seg+1] = np.sort(child[:n_seg+1])
+        child[0] = bmi_min
+        child[n_seg] = bmi_max
         
-        # 检查可行性
         if valid_func(child, bmi):
             return child
-
+    
     return parent
 
 def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[float], num_selected: int=2):
@@ -176,6 +194,7 @@ def run_genetic_algorithm(bmi: np.ndarray):
     n_gen = 100
     elitism_ratio = 0.2
     mutate_rate = 0.5
+    crossover_rate = 0.8
     fitness_fn = lambda ind: fitness_func(ind, bmi)
     
     for n_seg in range(2, 6):
@@ -183,7 +202,7 @@ def run_genetic_algorithm(bmi: np.ndarray):
         print("="*50)
         init_fn = lambda: init_sol_func(bmi, n_seg)
         select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
-        crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, bmi)
+        crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, bmi, crossover_rate)
         mutate_fn = lambda parent: mutate_func(parent, bmi, mutate_rate)
         
         ga = GeneticAlgorithm(
