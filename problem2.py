@@ -178,14 +178,7 @@ def fitness_func(ind: np.ndarray, bmi: np.ndarray):
     
     wi = Ni / N_total
     
-    g = np.zeros(n_seg)
-    for i in range(n_seg):
-        if t[i] <= 12:
-            g[i] = 1
-        else:
-            g[i] = 2
-
-    P = 2 - np.sum(wi * g)
+    P = - np.sum(wi * t)
     
     return P
 
@@ -193,7 +186,7 @@ def run_genetic_algorithm(bmi: np.ndarray):
     pop_size = 100
     n_gen = 100
     elitism_ratio = 0.2
-    mutate_rate = 0.5
+    mutate_rate = 0.1
     crossover_rate = 0.8
     fitness_fn = lambda ind: fitness_func(ind, bmi)
     
