@@ -4,6 +4,10 @@ from utils.ga import GeneticAlgorithm
 from utils.data_uitl import preprocess, calcu_first_over_week
 from typing import Dict, List
 
+
+def set_seed(seed=3407):
+    np.random.seed(seed)
+
 def get_params(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
     over_week_df = over_week_df.sort_values("孕妇BMI")
@@ -20,12 +24,12 @@ def calcu_Ni(ind: np.ndarray, params: Dict[str, np.ndarray]) -> np.ndarray:
     for i in range(n_seg):
         start_bmi = ind[i]
         end_bmi = ind[i + 1]
-        mask = np.where((bmi >= start_bmi) & (bmi < end_bmi), 1, 0)
+        mask = (bmi >= start_bmi) & (bmi < end_bmi)
         Ni[i] = np.sum(mask)
     
     return Ni
 
-def calcu_Ti(ind: np.ndarray, params: Dict[str, np.ndarray], percent: float=95):
+def calcu_Ti(ind: np.ndarray, params: Dict[str, np.ndarray], percent: float=90):
     bmi = params["bmi"]
     week = params["week"]
     n_seg = np.size(ind) - 1
@@ -34,19 +38,18 @@ def calcu_Ti(ind: np.ndarray, params: Dict[str, np.ndarray], percent: float=95):
     for i in range(n_seg):
         start_bmi = ind[i]
         end_bmi = ind[i + 1]
-        mask = np.where((bmi >= start_bmi) & (bmi < end_bmi), 1, 0)
+        mask = (bmi >= start_bmi) & (bmi < end_bmi)
         week_in_interval = week[mask]
         Ti[i] = np.percentile(week_in_interval, percent)
     
-    return Ti   
+    return Ti
 
 def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     Ni = calcu_Ni(ind, params)
-    Ti = calcu_Ti(ind, params)
-    
     if np.any(Ni <= 25):
         return False
     
+    Ti = calcu_Ti(ind, params)
     if np.any(Ti < 10) or np.any(Ti > 25):
         return False
     
@@ -59,7 +62,7 @@ def init_sol_func(params:Dict[str, np.ndarray], n_seg: int):
     bmi_div = np.random.uniform(bmi_min, bmi_max, (n_seg + 1))
     bmi_div = np.sort(bmi_div, axis=-1)
     bmi_div[0], bmi_div[-1] = np.min(bmi), np.max(bmi)
-
+    
     ind = bmi_div
     
     while not valid_func(ind, params):
@@ -136,7 +139,11 @@ def mutate_func(
     
     return parent
 
-def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[float], num_selected: int=2):
+def roulette_wheel_select(
+    population: List[np.ndarray], 
+    fitness_values:List[float], 
+    num_selected: int=2
+):
     max_fitness = np.max(fitness_values)
     adjusted_fitness = max_fitness - np.array(fitness_values) + 1e-6
     
@@ -156,7 +163,7 @@ def roulette_wheel_select(population: List[np.ndarray], fitness_values:List[floa
     return [population[i] for i in selected_indices]
 
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
-    N_total = len(params["bmi"])
+    N_total = np.size(params["bmi"])
     Ni = calcu_Ni(ind, params)
     Ti = calcu_Ti(ind, params)
     
@@ -169,14 +176,14 @@ def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
 def run_genetic_algorithm(params: Dict[str, np.ndarray]):
     pop_size = 100
     n_gen = 100
-    elitism_ratio = 0.5
-    mutate_rate = 0.3
-    crossover_rate = 0.9
+    elitism_ratio = 0.05
+    mutate_rate = 0.1
+    crossover_rate = 0.5
     fitness_fn = lambda ind: fitness_func(ind, params)
     
     best_results = []
     
-    for n_seg in range(2, 6):
+    for n_seg in range(2, 7):
         print(f"Running for n_seg = {n_seg}")
         print("="*50)
         init_fn = lambda: init_sol_func(params, n_seg)
@@ -212,7 +219,12 @@ def export_results(results: List[Dict[str, np.ndarray]], params: Dict[str, np.nd
         print(f"t: {ti}")
 
 
+def error_analysis(y_true, y_pred):
+    pass
+
+
 if __name__ == '__main__':
+    set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_params(df)
     results = run_genetic_algorithm(params)
