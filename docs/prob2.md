@@ -8,6 +8,7 @@ $$
 & (1)\quad b_0 < b_1 < b_2 < \cdots < b_{n-1} < b_n \\
 & (2)\quad 10 \leq t_i \leq 25, \quad \forall i = 1,2,\ldots,n \\
 & (3)\quad N_i > 25, \quad \forall i = 1,2,\ldots,n \\
+& (4)\quad P(y > 0.04| t_i) > 0.9 \\
 & (4)\quad w_i = \frac{N_i}{N}, \quad \forall i = 1,2,\ldots,n \\
 & (5)\quad g(t_i) = t_i - 10
 \quad \forall i = 1,2,\ldots,n \\
