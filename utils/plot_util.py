@@ -1,4 +1,5 @@
 import os
+import scipy
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -151,7 +152,6 @@ def plot_qq(residuals, show=False, save=True, save_path=None):
     
     plt.close()
     
-
 def plot_predicted_vs_actual(y_true, y_pred, title, xlabel, ylabel, show=False, save=True, save_path=None):
     y_true = np.array(y_true).ravel()
     y_pred = np.array(y_pred).ravel()
@@ -176,6 +176,54 @@ def plot_predicted_vs_actual(y_true, y_pred, title, xlabel, ylabel, show=False, 
 
     if show:
         plt.show()
+    
+    plt.close()
+
+def plot_confidence_intervals(df, column_names, confidence_level=0.95, show=False, save=True, save_path=None):
+    """绘制多列的置信区间图"""
+    if isinstance(column_names, str):
+        column_names = [column_names]
+    
+    means = []
+    cis = []
+    for col in column_names:
+        data = df[col].dropna()
+        n = len(data)
+        if n == 0:
+            raise ValueError(f"Column {col} contains only NaN values.")
+        mean = np.mean(data)
+        std_err = np.std(data, ddof=1) / np.sqrt(n)
+        # 使用t分布计算临界值
+        t_crit = scipy.stats.t.ppf((1 + confidence_level) / 2, df=n-1)
+        ci_lower = mean - t_crit * std_err
+        ci_upper = mean + t_crit * std_err
+        means.append(mean)
+        cis.append((ci_lower, ci_upper))
+    
+    plt.figure(figsize=(8, 6))
+    x = np.arange(len(column_names))
+    # 计算误差范围
+    lower_errors = [mean - ci[0] for mean, ci in zip(means, cis)]
+    upper_errors = [ci[1] - mean for mean, ci in zip(means, cis)]
+    yerr = [lower_errors, upper_errors]
+    
+    plt.errorbar(x, means, yerr=yerr, fmt='o', capsize=5, color='#0066FF', ecolor='gray', elinewidth=2, alpha=0.8)
+    
+    plt.xticks(x, column_names)
+    plt.title(f'{int(confidence_level*100)}% 置信区间图')
+    plt.ylabel('均值及置信区间')
+    plt.grid(True, axis='y', alpha=0.5)
+    plt.tight_layout()
+    
+    if show:
+        plt.show()
+    
+    if save:
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
+        os.makedirs(save_path, exist_ok=True)
+        filename = f'confidence_intervals_{confidence_level:.2f}.png'
+        plt.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
     
     plt.close()
 

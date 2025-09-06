@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from utils.plot_util import plot_confidence_intervals
 from utils.ga import run_genetic_algorithm, calcu_Ti
 from utils.data_uitl import preprocess, calcu_first_over_week
 from typing import Dict

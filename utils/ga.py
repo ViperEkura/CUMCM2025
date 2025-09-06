@@ -112,20 +112,16 @@ def init_sol_func(params:Dict[str, np.ndarray], n_seg: int):
     bmi = params["bmi"]
     
     bmi_min, bmi_max = np.min(bmi), np.max(bmi)
-    bmi_div = np.random.uniform(bmi_min, bmi_max, (n_seg + 1))
-    bmi_div = np.sort(bmi_div, axis=-1)
+    bmi_div = np.zeros(n_seg + 1)
     bmi_div[0], bmi_div[-1] = np.min(bmi), np.max(bmi)
+    bmi_div[1:-1] = np.random.uniform(bmi_min, bmi_max, (n_seg - 1,))
+    bmi_div = np.sort(bmi_div, axis=-1)
     
-    ind = bmi_div
-    
-    while not valid_func(ind, params):
-        bmi_div = np.random.uniform(bmi_min, bmi_max, (n_seg + 1))
+    while not valid_func(bmi_div, params):
+        bmi_div[1:-1] = np.random.uniform(bmi_min, bmi_max, (n_seg - 1,))
         bmi_div = np.sort(bmi_div, axis=-1)
-        bmi_div[0], bmi_div[-1] = np.min(bmi), np.max(bmi)
-
-        ind = bmi_div
     
-    return ind
+    return bmi_div
 
 def crossover_func(
     parent1: np.ndarray, 
