@@ -2,28 +2,28 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from utils.data_uitl import preprocess, calcu_first_over_week
-from utils.ga import calcu_Ti
+from utils.ga import calcu_Ti, calcu_Ni
 from typing import Dict
 
 
-def get_init_params():
-    df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
+def get_init_params(df: pd.DataFrame, n_clusters) -> Dict[str, np.ndarray]:
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
     over_week_df = over_week_df.sort_values("孕妇BMI")
-    return over_week_df
-
-def get_center_and_label(df: pd.DataFrame, n_clusters):
-    df = df[["身高", "孕妇BMI"]]
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    kmeans.fit(df)
-    return kmeans.cluster_centers_, kmeans.labels_
-
-def split_df(df: pd.DataFrame, label:np.ndarray, n_clusters):
-    splited_df_list = []
-    for n in range(n_clusters):
-        splited_df_list.append(df[label == n])
+    kmeans.fit(over_week_df[["年龄", "孕妇BMI"]])
+    over_week_df["clusters"] = kmeans.labels_
     
-    return splited_df_list
+    params = {
+        "cls": over_week_df["clusters"].values, 
+        "bmi": over_week_df["孕妇BMI"].values,
+        "week": over_week_df["检测孕周"].values,
+        "ivf": over_week_df["IVF妊娠"].values,
+        "t13": over_week_df["T13"].values,
+        "t18": over_week_df["T18"].values,
+        "t21": over_week_df["T21"].values
+    }
+    
+    return params
 
 
 def R_ivf():
@@ -34,15 +34,14 @@ def R_abnromal():
 
 
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
+    
     N_total = np.size(params["bmi"])
-    Ni = calcu_Ti(ind, params)
+    Ni = calcu_Ni(ind, params)
     Ti = calcu_Ti(ind, params)
-    
     wi = Ni / N_total
-    gi = Ti - 10
-    P = np.sum(wi * gi)
     
-    return - P
+    
+    return None
 
 
 def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
@@ -51,7 +50,7 @@ def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
 
 if __name__ == "__main__":
     n_clusters = 3
+    df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
+    params = get_init_params(df, n_clusters)
     
-    df = get_init_params()
-    center, label = get_center_and_label(df, n_clusters)
-    splited_df_list = split_df(df, label, n_clusters)
+    print(params)

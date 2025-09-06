@@ -41,7 +41,17 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     df["IVF妊娠"] = df["IVF妊娠"].apply(calcu_pregnancy_type)
     df["胎儿是否健康"] = df["胎儿是否健康"].apply(calcu_fetus_health)
     
+    # 新增T13、T18、T21列
+    chromosome_columns = [col for col in df.columns if '染色体的非整倍体' in col]
+    df['T13'], df['T18'], df['T21'] = 0, 0, 0
+    
+    for col in chromosome_columns:
+        df['T13'] = df['T13'] | df[col].str.contains('T13', na=False).astype(int)
+        df['T18'] = df['T18'] | df[col].str.contains('T18', na=False).astype(int)
+        df['T21'] = df['T21'] | df[col].str.contains('T21', na=False).astype(int)
+    
     return df
+    
 
 def shapiro_test(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
     results = []
