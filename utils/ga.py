@@ -34,19 +34,33 @@ class GeneticAlgorithm:
             best_fitness = max(fitnesses)
             best_fitness_history.append(best_fitness)
             
-            print(f"Generation {gen}: Best Fitness = {best_fitness}")
+            # 使用字典来去重，键为个体的字符串表示
+            unique_individuals = {}
+            for i, ind in enumerate(population):
+                ind_key = tuple(ind) 
+                if ind_key not in unique_individuals or fitnesses[i] > fitnesses[unique_individuals[ind_key]]:
+                    unique_individuals[ind_key] = i
             
-            elite_indices = np.argsort(fitnesses)[-self.n_elite:]
+            sorted_unique_indices = sorted(unique_individuals.values(), 
+                                        key=lambda i: fitnesses[i], 
+                                        reverse=True)
+            
+            elite_indices = sorted_unique_indices[:self.n_elite]
             elites = [population[i] for i in elite_indices]
+
             new_population = elites.copy()
             
             while len(new_population) < self.pop_size:
-                parent1, parent2 = self.select_func(population, fitnesses)  # 选择父母
-                child = self.crossover_func(parent1, parent2)               # 交叉
-                child = self.mutate_func(child)                             # 变异
+                parent1, parent2 = self.select_func(population, fitnesses)
+                child = self.crossover_func(parent1, parent2)
+                child = self.mutate_func(child)
                 new_population.append(child)
             
             population = new_population
+            
+            # 输出多样性信息
+            unique_count = len(set(tuple(ind) for ind in population))
+            print(f"Generation {gen}: Best Fitness = {best_fitness}, Diversity = {unique_count}/{self.pop_size}")
         
         final_fitnesses = [self.fitness_func(individual) for individual in population]
         best_individual = population[np.argmax(final_fitnesses)]

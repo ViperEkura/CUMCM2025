@@ -76,24 +76,32 @@ def crossover_func(
     parent2: np.ndarray, 
     params:Dict[str, np.ndarray], 
     crossover_ratio: float = 0.8, 
-    max_attempts: int = 500
+    max_attempts: int = 200
 ) -> np.ndarray:
     """多点交叉"""
     n_seg = np.size(parent1) - 1
+    bmi_min, bmi_max = np.min(params["bmi"]), np.max(params["bmi"])
+    
     for _ in range(max_attempts):
         child = parent1.copy()
         
-         # 跳过第一个和最后一个分段点（它们是固定的）
-        for i in range(1, n_seg): 
-            if np.random.random() < crossover_ratio:
-                child[i] = parent2[i]
+        crossover_points = np.random.choice(range(1, n_seg), 
+                                          size=int(crossover_ratio * n_seg), 
+                                          replace=False)
         
-        child[:n_seg+1] = np.sort(child[:n_seg+1])
+        for i in crossover_points:
+            child[i] = parent2[i]
+
+        child = np.sort(child)
+        child[0] = bmi_min
+        child[-1] = bmi_max
         
         if valid_func(child, params):
             return child
-    
-    return parent1 if np.random.random() < 0.5 else parent2
+
+    fitness1 = fitness_func(parent1, params)
+    fitness2 = fitness_func(parent2, params)
+    return parent1 if fitness1 > fitness2 else parent2
 
 def mutate_func(
     parent: np.ndarray,
@@ -108,14 +116,18 @@ def mutate_func(
     for _ in range(max_attempts):
         child = parent.copy()
         
-        for i in range(1, n_seg):
-            if np.random.random() < mutation_rate:
-                left_bound = child[i-1] if i > 0 else bmi_min
-                right_bound = child[i+1] if i < n_seg else bmi_max
-                child[i] = np.random.uniform(left_bound + 0.1, right_bound - 0.1)
+        mutation_points = np.random.choice(range(1, n_seg), 
+                                         size=int(mutation_rate * n_seg), 
+                                         replace=False)
+        
+        for i in mutation_points:
+            left_bound = child[i-1] if i > 0 else bmi_min
+            right_bound = child[i+1] if i < n_seg else bmi_max
+            
+            new_value = np.random.uniform(left_bound, right_bound)
+            child[i] = new_value
         
         child = np.sort(child)
-        
         child[0] = bmi_min
         child[-1] = bmi_max
         
