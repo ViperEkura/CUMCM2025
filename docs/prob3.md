@@ -1,7 +1,7 @@
 
 $$
 \begin{aligned}
-& \min Z = \sum_{i=1}^{n} w_i (h(T_i) + R(a_i) + R(b_i, c_i, d_i))\\
+& \min Z = \sum_{i=1}^{n} w_i (h(T_i) + R^{IVF} + R^{CA})\\
 & \text{s.t.} 
 \begin{cases} 
 & (1)\quad b_0 < b_1 < b_2 < \cdots < b_{n-1} < b_n \\
@@ -11,8 +11,8 @@ $$
 & (5)\quad w_i = \frac{N_i}{N}, \quad \forall i = 1,2,\ldots,n \\
 & (6)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
 & (7)\quad h(T_i) =  \alpha T_i \\
-& (8)\quad R_{IVF}(a_i) = \beta n_{IVF} \\
-& (9)\quad R_{abnormal}(b_i, c_i, d_i) = \gamma (b_i + c_i + d_i)
+& (8)\quad R^{IVF} = \beta n_{i}^{IVF} \\
+& (9)\quad R^{CA} = \gamma n_{i}^{CA}
 \end{cases}
 \end{aligned}
 $$
