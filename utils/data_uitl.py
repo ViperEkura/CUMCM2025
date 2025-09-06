@@ -41,15 +41,9 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     df["IVF妊娠"] = df["IVF妊娠"].apply(calcu_pregnancy_type)
     df["胎儿是否健康"] = df["胎儿是否健康"].apply(calcu_fetus_health)
     
-    # 新增T13、T18、T21列
-    chromosome_columns = [col for col in df.columns if '染色体的非整倍体' in col]
-    df['T13'], df['T18'], df['T21'] = 0, 0, 0
-    
-    for col in chromosome_columns:
-        df['T13'] = df['T13'] | df[col].str.contains('T13', na=False).astype(int)
-        df['T18'] = df['T18'] | df[col].str.contains('T18', na=False).astype(int)
-        df['T21'] = df['T21'] | df[col].str.contains('T21', na=False).astype(int)
-    
+    #NA值标记为False，非NA值标记为True
+    df["染色体的非整倍体"] = df["染色体的非整倍体"].notna()
+
     return df
     
 
@@ -235,3 +229,36 @@ def custom_statistical_tests(model, X, y, feature_names, coef, intercept):
     print("-" * (name_width + 55))
     print("显著性水平: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1")
     print("=" * (name_width + 55))
+    
+def calculate_confidence_interval(data, confidence=0.95):
+    n = len(data)
+    mean = np.mean(data)
+    std_err = stats.sem(data)
+    
+    t_critical = stats.t.ppf((1 + confidence) / 2, df=n-1)
+    
+    margin_of_error = t_critical * std_err
+    ci_lower = mean - margin_of_error
+    ci_upper = mean + margin_of_error
+    
+    return mean, ci_lower, ci_upper
+
+def analyze_data(data: np.ndarray, data_type: str ="", start_index: int = 0) -> None:
+    n_params = data.shape[1]
+    
+    print(f"\n{data_type}统计结果:")
+    print("=" * 90)
+    print("序号 |    均值    |   标准差   | 变异系数(%) |    95%置信区间    |     区间宽度")
+    print("-" * 90)
+    
+    for i in range(n_params):
+        param_data = data[:, i]
+        mean = np.mean(param_data)
+        std = np.std(param_data)
+        cv = (std / mean) * 100 if mean != 0 else 0
+
+        _, ci_lower, ci_upper = calculate_confidence_interval(param_data)
+        interval_width = ci_upper - ci_lower
+        
+        index = start_index + i
+        print(f"{index:4d} | {mean:10.4f} | {std:10.4f} | {cv:10.2f} | [{ci_lower:7.4f}, {ci_upper:7.4f}] | {interval_width:10.4f}")

@@ -97,6 +97,34 @@ def calcu_Ti(ind: np.ndarray, params: Dict[str, np.ndarray], percent: float=90):
     
     return Ti
 
+def calcu_R_IVF(ind: np.ndarray, params: Dict[str, np.ndarray]):
+    bmi = params["bmi"]
+    ivf = params["ivf"]
+    n_seg = np.size(ind) - 1
+    R_IVF = np.zeros(n_seg)
+    
+    for i in range(n_seg):
+        start_bmi = ind[i]
+        end_bmi = ind[i + 1]
+        mask = (bmi >= start_bmi) & (bmi < end_bmi)
+        R_IVF[i] = np.sum(ivf[mask])
+        
+    return R_IVF
+
+def calcu_R_CA(ind: np.ndarray, params: Dict[str, np.ndarray]):
+    bmi = params["bmi"]
+    ivf = params["ca"]
+    n_seg = np.size(ind) - 1
+    R_CA = np.zeros(n_seg)
+    
+    for i in range(n_seg):
+        start_bmi = ind[i]
+        end_bmi = ind[i + 1]
+        mask = (bmi >= start_bmi) & (bmi < end_bmi)
+        R_CA[i] = np.sum(ivf[mask])
+        
+    return R_CA
+
 def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     Ni = calcu_Ni(ind, params)
     if np.any(Ni <= 25):
@@ -151,9 +179,7 @@ def crossover_func(
         if valid_func(child, params):
             return child
 
-    fitness1 = fitness_func(parent1, params)
-    fitness2 = fitness_func(parent2, params)
-    return parent1 if fitness1 > fitness2 else parent2
+    return parent1 if np.random.random() < 0.5 else parent2
 
 def mutate_func(
     parent: np.ndarray,
@@ -201,39 +227,3 @@ def roulette_wheel_select(
     indices = np.random.choice(len(population), size=num_selected, p=selection_probs)
     
     return [population[i] for i in indices]
-
-def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
-    N_total = np.size(params["bmi"])
-    Ni = calcu_Ni(ind, params)
-    Ti = calcu_Ti(ind, params)
-    
-    wi = Ni / N_total
-    gi = Ti - 10
-    P = np.sum(wi * gi)
-    
-    return - P
-
-def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
-    pop_size = 100
-    n_gen = 100
-    elitism_ratio = 0.1
-    mutate_rate = 0.4
-    crossover_rate = 0.8
-    fitness_fn = lambda ind: fitness_func(ind, params)
-    init_fn = lambda: init_sol_func(params, n_seg)
-    select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
-    crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, params, crossover_rate)
-    mutate_fn = lambda parent: mutate_func(parent, params, mutate_rate)
-
-    ga = GeneticAlgorithm(
-        pop_size, 
-        n_gen, 
-        init_fn, 
-        select_fn, 
-        crossover_fn, 
-        mutate_fn, 
-        fitness_fn, 
-        elitism_ratio
-    )
-    
-    return ga.run(show_progress)

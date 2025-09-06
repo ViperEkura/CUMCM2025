@@ -1,56 +1,92 @@
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
+from utils.ga import (
+    GeneticAlgorithm, 
+    calcu_Ni, 
+    calcu_Ti,
+    calcu_R_CA,
+    calcu_R_IVF,
+    init_sol_func, 
+    roulette_wheel_select, 
+    crossover_func, 
+    mutate_func
+)
 from utils.data_uitl import preprocess, calcu_first_over_week
-from utils.ga import calcu_Ti, calcu_Ni
 from typing import Dict
 
 
-def get_init_params(df: pd.DataFrame, n_clusters) -> Dict[str, np.ndarray]:
+def get_init_params(df: pd.DataFrame, n_clusters=3) -> Dict[str, Dict[str, np.ndarray]]:
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
     over_week_df = over_week_df.sort_values("孕妇BMI")
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     kmeans.fit(over_week_df[["年龄", "孕妇BMI"]])
     over_week_df["clusters"] = kmeans.labels_
     
-    params = {
-        "cls": over_week_df["clusters"].values, 
-        "bmi": over_week_df["孕妇BMI"].values,
-        "week": over_week_df["检测孕周"].values,
-        "ivf": over_week_df["IVF妊娠"].values,
-        "t13": over_week_df["T13"].values,
-        "t18": over_week_df["T18"].values,
-        "t21": over_week_df["T21"].values
-    }
+    cluster_groups = {}
+    for cluster_id in range(n_clusters):
+        cluster_data = over_week_df[over_week_df["clusters"] == cluster_id]
+        
+        cluster_params = {
+            "bmi": cluster_data["孕妇BMI"].values,
+            "week": cluster_data["检测孕周"].values,
+            "ivf": cluster_data["IVF妊娠"].values == 3, # IVF(试管婴儿)
+            "ca": cluster_data["染色体的非整倍体"].values
+        }
+        
+        cluster_groups[f"cluster_{cluster_id}"] = cluster_params
     
-    return params
+    return cluster_groups
 
-
-def R_ivf():
-    pass
-
-def R_abnromal():
-    pass
-
-
-def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
-    
+def fitness_func(
+    ind: np.ndarray, 
+    params: Dict[str, np.ndarray],
+    alpha=10,
+    beta=10,
+    gamma=10,
+):
     N_total = np.size(params["bmi"])
     Ni = calcu_Ni(ind, params)
     Ti = calcu_Ti(ind, params)
     wi = Ni / N_total
     
+    h = alpha * Ti
+    R_ivf = beta * calcu_R_IVF(ind, params)
+    R_ca = gamma * calcu_R_CA(ind, params)
+    Z = np.sum(wi * (h + R_ivf + R_ca))
     
-    return None
+    return -Z
 
+def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
+    pop_size = 100
+    n_gen = 100
+    elitism_ratio = 0.1
+    mutate_rate = 0.4
+    crossover_rate = 0.8
+    fitness_fn = lambda ind: fitness_func(ind, params)
+    init_fn = lambda: init_sol_func(params, n_seg)
+    select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
+    crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, params, crossover_rate)
+    mutate_fn = lambda parent: mutate_func(parent, params, mutate_rate)
 
-def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
+    ga = GeneticAlgorithm(
+        pop_size, 
+        n_gen, 
+        init_fn, 
+        select_fn, 
+        crossover_fn, 
+        mutate_fn, 
+        fitness_fn, 
+        elitism_ratio
+    )
+    
+    return ga.run(show_progress)
+
+def run_mutigroup_ga(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
     pass
 
 
+
 if __name__ == "__main__":
-    n_clusters = 3
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
-    params = get_init_params(df, n_clusters)
-    
-    print(params)
+    params = get_init_params(df)

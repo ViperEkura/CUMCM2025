@@ -1,9 +1,16 @@
 import os
 import numpy as np
 import pandas as pd
-from scipy import stats
-from utils.ga import run_genetic_algorithm, calcu_Ti
-from utils.data_uitl import preprocess, calcu_first_over_week
+from utils.ga import (
+    GeneticAlgorithm, 
+    calcu_Ni, 
+    calcu_Ti, 
+    init_sol_func, 
+    roulette_wheel_select, 
+    crossover_func, 
+    mutate_func
+)
+from utils.data_uitl import analyze_data, preprocess, calcu_first_over_week
 from typing import Dict
 
 plot_save_path = 'analyze_plot'
@@ -13,6 +20,43 @@ os.makedirs(table_save_path, exist_ok=True)
 
 def set_seed(seed=3407):
     np.random.seed(seed)
+    
+    
+def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
+    N_total = np.size(params["bmi"])
+    Ni = calcu_Ni(ind, params)
+    Ti = calcu_Ti(ind, params)
+    
+    wi = Ni / N_total
+    gi = Ti - 10
+    P = np.sum(wi * gi)
+    
+    return - P
+
+def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
+    pop_size = 100
+    n_gen = 100
+    elitism_ratio = 0.1
+    mutate_rate = 0.4
+    crossover_rate = 0.8
+    fitness_fn = lambda ind: fitness_func(ind, params)
+    init_fn = lambda: init_sol_func(params, n_seg)
+    select_fn = lambda pop, fitness: roulette_wheel_select(pop, fitness)
+    crossover_fn = lambda parent1, parent2: crossover_func(parent1, parent2, params, crossover_rate)
+    mutate_fn = lambda parent: mutate_func(parent, params, mutate_rate)
+
+    ga = GeneticAlgorithm(
+        pop_size, 
+        n_gen, 
+        init_fn, 
+        select_fn, 
+        crossover_fn, 
+        mutate_fn, 
+        fitness_fn, 
+        elitism_ratio
+    )
+    
+    return ga.run(show_progress)
 
 def get_ga_params(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
@@ -70,38 +114,6 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
     
     return all_inds, all_tis
 
-def calculate_confidence_interval(data, confidence=0.95):
-    n = len(data)
-    mean = np.mean(data)
-    std_err = stats.sem(data)
-    
-    t_critical = stats.t.ppf((1 + confidence) / 2, df=n-1)
-    
-    margin_of_error = t_critical * std_err
-    ci_lower = mean - margin_of_error
-    ci_upper = mean + margin_of_error
-    
-    return mean, ci_lower, ci_upper
-
-def analyze_data(data: np.ndarray, data_type: str ="", start_index: int = 0) -> None:
-    n_params = data.shape[1]
-    
-    print(f"\n{data_type}统计结果:")
-    print("=" * 90)
-    print("序号 |    均值    |   标准差   | 变异系数(%) |    95%置信区间    |     区间宽度")
-    print("-" * 90)
-    
-    for i in range(n_params):
-        param_data = data[:, i]
-        mean = np.mean(param_data)
-        std = np.std(param_data)
-        cv = (std / mean) * 100 if mean != 0 else 0
-
-        _, ci_lower, ci_upper = calculate_confidence_interval(param_data)
-        interval_width = ci_upper - ci_lower
-        
-        index = start_index + i
-        print(f"{index:4d} | {mean:10.4f} | {std:10.4f} | {cv:10.2f} | [{ci_lower:7.4f}, {ci_upper:7.4f}] | {interval_width:10.4f}")
 
 
 if __name__ == '__main__':
