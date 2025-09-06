@@ -24,7 +24,7 @@ class GeneticAlgorithm:
         self.elitism_ratio = elitism_ratio
         self.n_elite = max(1, int(pop_size * elitism_ratio))
     
-    def run(self) -> Tuple[np.ndarray, List[float]]:
+    def run(self, show_progress=True) -> Tuple[np.ndarray, List[float]]:
         population = [self.init_func() for _ in range(self.pop_size)]
         best_fitness_history = []
         
@@ -59,8 +59,9 @@ class GeneticAlgorithm:
             population = new_population
             
             # 输出多样性信息
-            unique_count = len(set(tuple(ind) for ind in population))
-            print(f"Generation {gen}: Best Fitness = {best_fitness}, Diversity = {unique_count}/{self.pop_size}")
+            if show_progress:
+                unique_count = len(set(tuple(ind) for ind in population))
+                print(f"Generation {gen}: Best Fitness = {best_fitness}, Diversity = {unique_count}/{self.pop_size}")
         
         final_fitnesses = [self.fitness_func(individual) for individual in population]
         best_individual = population[np.argmax(final_fitnesses)]

@@ -173,7 +173,7 @@ def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     
     return - P
 
-def run_genetic_algorithm(params: Dict[str, np.ndarray]):
+def run_genetic_algorithm(params: Dict[str, np.ndarray], show_res: bool=True, show_progress: bool=True):
     pop_size = 100
     n_gen = 100
     elitism_ratio = 0.1
@@ -202,31 +202,71 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray]):
             elitism_ratio
         )
         
-        best_ind, best_fitnesses = ga.run()
+        best_ind, best_fitnesses = ga.run(show_progress=show_progress)
         best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses})
+
+    
+    if show_res:
+        for res in best_results:
+            bmi_div = res["ind"]
+            n_seg = res["n_seg"]
+            fitness = max(res["fitnesses"])
+            ti = calcu_Ti(bmi_div, params)
+            
+            print(f"n_seg: {n_seg}")
+            print(f"b: {np.around(bmi_div, 2)}")
+            print(f"t: {np.around(ti, 2)}")
+            print(f"fitness: {-fitness:.2f}")
     
     return best_results
 
 
-def export_results(results: List[Dict[str, np.ndarray]], params: Dict[str, np.ndarray]):
-    for res in results:
-        bmi_div = res["ind"]
-        n_seg = res["n_seg"]
-        fitness = max(res["fitnesses"])
-        ti = calcu_Ti(bmi_div, params)
+def error_analysis(df: pd.DataFrame,  n_repeats: int = 10, noise_std: float = 0.01):
+    """对Y染色体浓度添加扰动后运行遗传算法，分析节点(bmi_div)的稳定性"""
+    all_results = {n_seg: [] for n_seg in range(2, 6)}
+    
+    for i in range(n_repeats):
+        print(f"Running perturbation experiment {i+1}/{n_repeats}")
         
-        print(f"n_seg: {n_seg}")
-        print(f"b: {np.around(bmi_div, 2)}")
-        print(f"t: {np.around(ti, 2)}")
-        print(f"fitness: {-fitness:.2f}")
-
-def error_analysis(y_true, y_pred):
-    pass
+        df_perturbed = df.copy()
+        noise = np.random.normal(0, noise_std, size=len(df))
+        df_perturbed["Y染色体浓度"] += noise
+        
+        params = get_params(df_perturbed)
+        results = run_genetic_algorithm(params, show_res=True, show_progress=False)
+        
+        for res in results:
+            n_seg = res["n_seg"]
+            all_results[n_seg].append(res["ind"])
+    
+    for n_seg in range(2, 6):
+        print(f"\nAnalysis for n_seg = {n_seg}:")
+        print("=" * 50)
+        
+        segments = all_results[n_seg]
+        if not segments:
+            print(f"No results for n_seg = {n_seg}")
+            continue
+        
+        segments_array = np.array(segments)
+        means = np.mean(segments_array, axis=0)
+        stds = np.std(segments_array, axis=0)
+        
+        print(f"Average BMI division points: {np.around(means, 4)}")
+        print(f"Standard deviations: {np.around(stds, 4)}")
+        
+        coeff_vars = stds / means
+        print(f"Coefficient of variation: {np.around(coeff_vars, 4)}")
+        
+        stable_threshold = 0.05 
+        is_stable = np.all(coeff_vars < stable_threshold)
+        print(f"All points stable (CV < {stable_threshold*100}%): {is_stable}")
 
 
 if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_params(df)
-    results = run_genetic_algorithm(params)
-    export_results(results, params)
+    
+    # run_genetic_algorithm(params)
+    error_analysis(df)
