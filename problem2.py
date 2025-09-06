@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from utils.ga import GeneticAlgorithm
 from utils.data_uitl import preprocess, calcu_first_over_week
-from typing import List
+from typing import Dict, List, Tuple
 
 def get_params(df: pd.DataFrame):
     over_week_df = calcu_first_over_week(df, "Y染色体浓度", 0.04)
@@ -178,7 +178,7 @@ def fitness_func(ind: np.ndarray, bmi: np.ndarray):
     
     wi = Ni / N_total
     
-    P = - np.sum(wi * t)
+    P = - np.sum(wi * (t - 10))
     
     return P
 
@@ -189,6 +189,8 @@ def run_genetic_algorithm(bmi: np.ndarray):
     mutate_rate = 0.1
     crossover_rate = 0.8
     fitness_fn = lambda ind: fitness_func(ind, bmi)
+
+    best_results = []
     
     for n_seg in range(2, 6):
         print(f"Running for n_seg = {n_seg}")
@@ -209,10 +211,33 @@ def run_genetic_algorithm(bmi: np.ndarray):
             elitism_ratio
         )
         
-        ga.run()
+        best_ind, best_fitnesses = ga.run()
+        best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses})
+    
+    return best_results
+
+def decode_ind(ind: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    n_seg = (len(ind) - 1) // 2
+    bmi_div = ind[:n_seg + 1]
+    t = ind[n_seg + 1:]
+    
+    return bmi_div, t
+
+def export_results(results: List[Dict[str, np.ndarray]], filename: str):
+    
+    for res in results:
+        bmi_div, t = decode_ind(res["ind"])
+        fitnesses = res["fitnesses"]
+        n_seg = res["n_seg"]
+        
+        print(f"n_seg: {n_seg}")
+        print(f"b: {bmi_div}")
+        print(f"t: {t}")
+
 
 
 if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     bmi = get_params(df)
-    run_genetic_algorithm(bmi)
+    results = run_genetic_algorithm(bmi)
+    export_results(results, "result.txt")
