@@ -193,23 +193,14 @@ def roulette_wheel_select(
     fitness_values:List[float], 
     num_selected: int=2
 ):
-    max_fitness = np.max(fitness_values)
-    adjusted_fitness = max_fitness - np.array(fitness_values) + 1e-6
+    min_fitness = np.min(fitness_values)
+    adjusted_fitness = np.array(fitness_values) - min_fitness + 1e-6
     
     total_fitness = np.sum(adjusted_fitness)
     selection_probs = adjusted_fitness / total_fitness
+    indices = np.random.choice(len(population), size=num_selected, p=selection_probs)
     
-    cumulative_probs = np.cumsum(selection_probs)
-    selected_indices = []
-    
-    for _ in range(num_selected):
-        r = np.random.random()
-        for i, cum_prob in enumerate(cumulative_probs):
-            if r <= cum_prob:
-                selected_indices.append(i)
-                break
-
-    return [population[i] for i in selected_indices]
+    return [population[i] for i in indices]
 
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     N_total = np.size(params["bmi"])
