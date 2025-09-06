@@ -176,14 +176,14 @@ def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
 def run_genetic_algorithm(params: Dict[str, np.ndarray]):
     pop_size = 100
     n_gen = 100
-    elitism_ratio = 0.05
+    elitism_ratio = 0.1
     mutate_rate = 0.1
     crossover_rate = 0.5
     fitness_fn = lambda ind: fitness_func(ind, params)
     
     best_results = []
     
-    for n_seg in range(2, 7):
+    for n_seg in range(2, 6):
         print(f"Running for n_seg = {n_seg}")
         print("="*50)
         init_fn = lambda: init_sol_func(params, n_seg)
@@ -208,16 +208,17 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray]):
     return best_results
 
 
-def export_results(results: List[Dict[str, np.ndarray]], params: Dict[str, np.ndarray], filename: str):
+def export_results(results: List[Dict[str, np.ndarray]], params: Dict[str, np.ndarray]):
     for res in results:
         bmi_div = res["ind"]
         n_seg = res["n_seg"]
+        fitness = max(res["fitnesses"])
         ti = calcu_Ti(bmi_div, params)
         
         print(f"n_seg: {n_seg}")
-        print(f"b: {bmi_div}")
-        print(f"t: {ti}")
-
+        print(f"b: {np.around(bmi_div, 2)}")
+        print(f"t: {np.around(ti, 2)}")
+        print(f"fitness: {-fitness:.2f}")
 
 def error_analysis(y_true, y_pred):
     pass
@@ -228,4 +229,4 @@ if __name__ == '__main__':
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_params(df)
     results = run_genetic_algorithm(params)
-    export_results(results, params, "result.txt")
+    export_results(results, params)
