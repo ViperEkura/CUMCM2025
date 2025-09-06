@@ -76,7 +76,7 @@ def crossover_func(
     parent2: np.ndarray, 
     params:Dict[str, np.ndarray], 
     crossover_ratio: float = 0.8, 
-    max_attempts: int = 200
+    max_attempts: int = 2000
 ) -> np.ndarray:
     """多点交叉"""
     n_seg = np.size(parent1) - 1
@@ -107,7 +107,7 @@ def mutate_func(
     parent: np.ndarray,
     params: Dict[str, np.ndarray], 
     mutation_rate: float = 0.3,
-    max_attempts: int = 500
+    max_attempts: int = 2000
 ):
     """均匀变异"""
     n_seg = np.size(parent) - 1
@@ -169,11 +169,11 @@ def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
 def run_genetic_algorithm(params: Dict[str, np.ndarray]):
     pop_size = 100
     n_gen = 100
-    elitism_ratio = 0.2
-    mutate_rate = 0.1
-    crossover_rate = 0.8
+    elitism_ratio = 0.5
+    mutate_rate = 0.3
+    crossover_rate = 0.9
     fitness_fn = lambda ind: fitness_func(ind, params)
-
+    
     best_results = []
     
     for n_seg in range(2, 6):
