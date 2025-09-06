@@ -6,6 +6,8 @@ from scipy import stats
 from scipy.stats import shapiro, spearmanr
 from typing import List
 
+def set_seed(seed=3407):
+    np.random.seed(seed)
 
 def calcu_week(week_str: str) -> float:
     if pd.isna(week_str) or not isinstance(week_str, str):

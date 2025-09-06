@@ -10,16 +10,13 @@ from utils.ga import (
     crossover_func, 
     mutate_func
 )
-from utils.data_uitl import analyze_data, preprocess, calcu_first_over_week
+from utils.data_uitl import analyze_data, preprocess, calcu_first_over_week, set_seed
 from typing import Dict
 
 plot_save_path = 'analyze_plot'
 table_save_path = 'analyze_table'
 os.makedirs(plot_save_path, exist_ok=True)
 os.makedirs(table_save_path, exist_ok=True)
-
-def set_seed(seed=3407):
-    np.random.seed(seed)
     
     
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
@@ -94,8 +91,6 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
     all_inds = []
     all_tis = []
     
-    original_params = get_ga_params(df)
-    
     for i in range(n_repeats):
         print(f"Running experiment {i+1}/{n_repeats}")
         df_perturbed = df.copy()
@@ -104,7 +99,7 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
         
         params = get_ga_params(df_perturbed)
         best_ind, _ = run_genetic_algorithm(params, 5, show_progress=False)
-        ti_values = calcu_Ti(best_ind, original_params)
+        ti_values = calcu_Ti(best_ind, params)
         
         all_inds.append(best_ind)
         all_tis.append(ti_values)
