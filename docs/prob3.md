@@ -11,8 +11,8 @@ $$
 & (5)\quad w_i = \frac{N_i}{N}, \quad \forall i = 1,2,\ldots,n \\
 & (6)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
 & (7)\quad h(T_i) =  \alpha T_i \\
-& (8)\quad R_{IVF}(a_i) = \beta \frac{n_{IVF}}{N_i} \\
-& (9)\quad R_{abnormal}(b_i, c_i, d_i) = \gamma \frac{b_i + c_i + d_i}{N_i}
+& (8)\quad R_{IVF}(a_i) = \beta n_{IVF} \\
+& (9)\quad R_{abnormal}(b_i, c_i, d_i) = \gamma (b_i + c_i + d_i)
 \end{cases}
 \end{aligned}
 $$
