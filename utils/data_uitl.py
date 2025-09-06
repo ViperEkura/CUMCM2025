@@ -7,18 +7,6 @@ from scipy.stats import shapiro, spearmanr
 from typing import List
 
 
-def ndarray_to_pd(array: np.ndarray, row_prefix: str="row", col_prefix: str="col"):
-    n_samples, n_features = array.shape
-    row_names = [f'{row_prefix}{i+1}' for i in range(n_samples)]
-    col_names = [f'{col_prefix}{i+1}' for i in range(n_features)]
-    
-    return pd.DataFrame(
-        array, 
-        index=row_names, 
-        columns=col_names
-    )
-
-
 def calcu_week(week_str: str) -> float:
     if pd.isna(week_str) or not isinstance(week_str, str):
         return np.nan

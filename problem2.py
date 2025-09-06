@@ -1,8 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
+from scipy import stats
 from utils.ga import run_genetic_algorithm, calcu_Ti
-from utils.data_uitl import preprocess, calcu_first_over_week, ndarray_to_pd
+from utils.data_uitl import preprocess, calcu_first_over_week
 from typing import Dict
 
 plot_save_path = 'analyze_plot'
@@ -45,7 +46,7 @@ def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
     return best_results
 
 def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
-    """对Y染色体浓度添加扰动后分析稳定性"""
+    """对Y染色体浓度添加扰动后导出结果"""
     all_inds = []
     all_tis = []
     
@@ -61,47 +62,54 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
         best_ind, _ = run_genetic_algorithm(params, 5, show_progress=False)
         ti_values = calcu_Ti(best_ind, original_params)
         
-        all_inds.append(best_ind[1:-1])
+        all_inds.append(best_ind)
         all_tis.append(ti_values)
     
-    ind_array = np.array(all_inds)
-    ti_array = np.array(all_tis)
-    
-    print("\n误差分析结果 (n_seg=5):")
-    print("=" * 40)
-    
-    print("\nBMI分段点统计:")
-    print("序号 | 均值   | 标准差 | 变异系数(%)")
-    print("-" * 35)
-    for i in range(ind_array.shape[1]):
-        mean = np.mean(ind_array[:, i])
-        std = np.std(ind_array[:, i])
-        cv = (std / mean) * 100
-        print(f"{i:4d} | {mean:6.2f} | {std:6.3f} | {cv:8.2f}")
-    
-    print("\nTi值统计:")
-    print("分段 | 均值   | 标准差 | 变异系数(%)")
-    print("-" * 35)
-    for i in range(ti_array.shape[1]):
-        mean = np.mean(ti_array[:, i])
-        std = np.std(ti_array[:, i])
-        cv = (std / mean) * 100
-        print(f"{i+1:4d} | {mean:6.2f} | {std:6.3f} | {cv:8.2f}")
-    
     all_inds = np.stack(all_inds, axis=0)
-    all_tis = np.array(all_tis, axis=0)
+    all_tis = np.stack(all_tis, axis=0)
     
     return all_inds, all_tis
+
+def calculate_confidence_interval(data, confidence=0.95):
+    n = len(data)
+    mean = np.mean(data)
+    std_err = stats.sem(data)
+    
+    t_critical = stats.t.ppf((1 + confidence) / 2, df=n-1)
+    
+    margin_of_error = t_critical * std_err
+    ci_lower = mean - margin_of_error
+    ci_upper = mean + margin_of_error
+    
+    return mean, ci_lower, ci_upper
+
+def analyze_data(data: np.ndarray, data_type: str ="", start_index: int = 0) -> None:
+    n_params = data.shape[1]
+    
+    print(f"\n{data_type}统计结果:")
+    print("=" * 90)
+    print("序号 |    均值    |   标准差   | 变异系数(%) |    95%置信区间    |     区间宽度")
+    print("-" * 90)
+    
+    for i in range(n_params):
+        param_data = data[:, i]
+        mean = np.mean(param_data)
+        std = np.std(param_data)
+        cv = (std / mean) * 100 if mean != 0 else 0
+
+        _, ci_lower, ci_upper = calculate_confidence_interval(param_data)
+        interval_width = ci_upper - ci_lower
+        
+        index = start_index + i
+        print(f"{index:4d} | {mean:10.4f} | {std:10.4f} | {cv:10.2f} | [{ci_lower:7.4f}, {ci_upper:7.4f}] | {interval_width:10.4f}")
 
 
 if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     
-    # best_results = show_segments(df)
-    all_inds, all_tis = error_analysis(df, n_repeats=100)
-    all_inds, all_tis = ndarray_to_pd(all_inds), ndarray_to_pd(all_tis)
-    
-    all_inds.to_excel(os.path.join(table_save_path, "all_ind.xlsx"), index=False)
-    all_tis.to_excel(os.path.join(table_save_path, "all_ti.xlsx"), index=False)
-    
+    best_results = show_segments(df)
+    all_inds, all_tis = error_analysis(df, n_repeats=10) # 根据计算资源调整
+
+    analyze_data(all_inds, "BMI分段点误差分析")
+    analyze_data(all_tis, "检测孕周阈值误差分析")
