@@ -66,15 +66,14 @@ def get_ga_params(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     
     return {"bmi": bmi, "week": week}
 
-def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
-    params = get_ga_params(df)
+def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: bool=True):
     best_results = []
+    print("="*50)
     for n_seg in range(n_start, n_end):
         print(f"Running for n_seg = {n_seg}")
         best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=False)
         best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
 
-    print("="*50)
     if show_res:
         for res in best_results:
             bmi_div = res["ind"]
@@ -85,9 +84,11 @@ def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
             print(f"n_seg: {n_seg}")
             print(f"fitness: {-fitness:.2f}")
             print(f"b: {np.around(bmi_div, 2)}")
-            print(f"t: {np.around(ti, 2)}")        
+            print(f"t: {np.around(ti, 2)}")
     
+    print("="*50)
     return best_results
+
 
 def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
     """对Y染色体浓度添加扰动后导出结果"""

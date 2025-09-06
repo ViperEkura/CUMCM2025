@@ -82,11 +82,45 @@ def run_genetic_algorithm(params: Dict[str, np.ndarray], n_seg: int, show_progre
     
     return ga.run(show_progress)
 
-def run_mutigroup_ga(params: Dict[str, np.ndarray], n_seg: int, show_progress: bool):
-    pass
+def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: bool=True):
+    best_results = []
+    print("="*50)
+    for n_seg in range(n_start, n_end):
+        print(f"Running for n_seg = {n_seg}")
+        best_ind, best_fitnesses = run_genetic_algorithm(params, n_seg, show_progress=False)
+        best_results.append({"n_seg": n_seg, "ind": best_ind, "fitnesses": best_fitnesses[-1]})
+
+    if show_res:
+        for res in best_results:
+            bmi_div = res["ind"]
+            n_seg = res["n_seg"]
+            fitness = res["fitnesses"]
+            ti = calcu_Ti(bmi_div, params)
+            
+            print(f"n_seg: {n_seg}")
+            print(f"fitness: {-fitness:.2f}")
+            print(f"b: {np.around(bmi_div, 2)}")
+            print(f"t: {np.around(ti, 2)}")
+       
+    print("="*50)
+    return best_results
+
+
+def run_multi_cluster_ga(
+    cluster_params: Dict[str, Dict[str, np.ndarray]], 
+) -> Dict[str, dict]:
+    cls0 = cluster_params["cluster_0"]
+    cls1 = cluster_params["cluster_1"]
+    cls2 = cluster_params["cluster_2"]
+    
+    res0 = show_segments(cls0, 2, 3)
+    res1 = show_segments(cls1, 2, 3)
+    res2 = show_segments(cls2, 2, 5)
+        
 
 
 
 if __name__ == "__main__":
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_init_params(df)
+    run_multi_cluster_ga(params)
