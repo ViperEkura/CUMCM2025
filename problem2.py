@@ -1,9 +1,14 @@
+import os
 import numpy as np
 import pandas as pd
-from utils.plot_util import plot_confidence_intervals
 from utils.ga import run_genetic_algorithm, calcu_Ti
-from utils.data_uitl import preprocess, calcu_first_over_week
+from utils.data_uitl import preprocess, calcu_first_over_week, ndarray_to_pd
 from typing import Dict
+
+plot_save_path = 'analyze_plot'
+table_save_path = 'analyze_table'
+os.makedirs(plot_save_path, exist_ok=True)
+os.makedirs(table_save_path, exist_ok=True)
 
 def set_seed(seed=3407):
     np.random.seed(seed)
@@ -39,9 +44,8 @@ def show_segments(df: pd.DataFrame, n_start=2, n_end=6, show_res: bool=True):
     
     return best_results
 
-
 def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
-    """简化版误差分析：对Y染色体浓度添加扰动后分析稳定性"""
+    """对Y染色体浓度添加扰动后分析稳定性"""
     all_inds = []
     all_tis = []
     
@@ -83,7 +87,10 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
         std = np.std(ti_array[:, i])
         cv = (std / mean) * 100
         print(f"{i+1:4d} | {mean:6.2f} | {std:6.3f} | {cv:8.2f}")
-        
+    
+    all_inds = np.stack(all_inds, axis=0)
+    all_tis = np.array(all_tis, axis=0)
+    
     return all_inds, all_tis
 
 
@@ -91,5 +98,10 @@ if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     
-    show_segments(df)
-    error_analysis(df)
+    # best_results = show_segments(df)
+    all_inds, all_tis = error_analysis(df, n_repeats=100)
+    all_inds, all_tis = ndarray_to_pd(all_inds), ndarray_to_pd(all_tis)
+    
+    all_inds.to_excel(os.path.join(table_save_path, "all_ind.xlsx"), index=False)
+    all_tis.to_excel(os.path.join(table_save_path, "all_ti.xlsx"), index=False)
+    
