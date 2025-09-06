@@ -88,8 +88,10 @@ def show_segments(params: Dict[str, np.ndarray], n_start=2, n_end=6, show_res: b
 
 def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
     """对Y染色体浓度添加扰动后导出结果"""
-    all_inds = []
     all_tis = []
+    
+    ori_params = get_ga_params(df)
+    best_ind, _ = run_genetic_algorithm(ori_params, 5, show_progress=False)
     
     for i in range(n_repeats):
         print(f"Running experiment {i+1}/{n_repeats}")
@@ -98,25 +100,21 @@ def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.0
         df_perturbed["Y染色体浓度"] += noise
         
         params = get_ga_params(df_perturbed)
-        best_ind, _ = run_genetic_algorithm(params, 5, show_progress=False)
         ti_values = calcu_Ti(best_ind, params)
         
-        all_inds.append(best_ind)
         all_tis.append(ti_values)
     
-    all_inds = np.stack(all_inds, axis=0)
     all_tis = np.stack(all_tis, axis=0)
     
-    return all_inds, all_tis
+    return all_tis
 
 
 
 if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
-    
-    best_results = show_segments(df)
-    all_inds, all_tis = error_analysis(df, n_repeats=10) # 根据计算资源调整
+    params = get_ga_params(df) 
+    best_results = show_segments(params) 
+    all_tis = error_analysis(df, n_repeats=10)
 
-    analyze_data(all_inds, "BMI分段点误差分析")
     analyze_data(all_tis, "检测孕周阈值误差分析")

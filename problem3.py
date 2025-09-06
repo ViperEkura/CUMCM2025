@@ -116,10 +116,12 @@ def show_multi_segments(
     show_segments(cls2, 2, 5)
 
 
-def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: int = 10, noise_std: float = 0.001):
+def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: int = 10, noise_std: float = 0.01):
     """对Y染色体浓度添加扰动后导出结果"""
-    all_inds = []
     all_tis = []
+    
+    ori_params = get_ga_params(df)[cluster_name]
+    best_ind, _ = run_genetic_algorithm(ori_params, n_seg, show_progress=False)
     
     for i in range(n_repeats):
         print(f"Running experiment {i+1}/{n_repeats}")
@@ -128,36 +130,28 @@ def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: i
         df_perturbed["Y染色体浓度"] += noise
         
         params = get_ga_params(df_perturbed)[cluster_name]
-        best_ind, _ = run_genetic_algorithm(params, n_seg, show_progress=False)
         ti_values = calcu_Ti(best_ind, params)
         
-        all_inds.append(best_ind)
         all_tis.append(ti_values)
     
-    all_inds = np.stack(all_inds, axis=0)
     all_tis = np.stack(all_tis, axis=0)
     
-    return all_inds, all_tis
+    return all_tis
 
 def multi_error_analysis(df: pd.DataFrame):
-    inds0, tis0 = error_analysis(df, "cluster_0", 2)
-    inds1, tis1 = error_analysis(df, "cluster_1", 2)
-    inds2, tis2 = error_analysis(df, "cluster_2", 3)
+    tis0 = error_analysis(df, "cluster_0", 2)
+    tis1 = error_analysis(df, "cluster_1", 2)
+    tis2 = error_analysis(df, "cluster_2", 4)
 
-    analyze_data(inds0, "cluster_0 BMI分段点误差分析")
     analyze_data(tis0, "cluster_0 检测孕周阈值误差分析")
-    
-    analyze_data(inds1, "cluster_1 BMI分段点误差分析")
     analyze_data(tis1, "cluster_1 检测孕周阈值误差分析")
-    
-    analyze_data(inds2, "cluster_2 BMI分段点误差分析")
     analyze_data(tis2, "cluster_2 检测孕周阈值误差分析")
 
 
 if __name__ == "__main__":
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
-    # multi_params = get_ga_params(df)
-    # show_multi_segments(multi_params)
+    multi_params = get_ga_params(df)
+    show_multi_segments(multi_params)
     multi_error_analysis(df)
 
