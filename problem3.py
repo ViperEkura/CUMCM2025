@@ -142,7 +142,7 @@ def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: i
 def multi_error_analysis(df: pd.DataFrame):
     inds0, tis0 = error_analysis(df, "cluster_0", 2)
     inds1, tis1 = error_analysis(df, "cluster_1", 2)
-    inds2, tis2 = error_analysis(df, "cluster_2", 4)
+    inds2, tis2 = error_analysis(df, "cluster_2", 3)
 
     analyze_data(inds0, "cluster_0 BMI分段点误差分析")
     analyze_data(tis0, "cluster_0 检测孕周阈值误差分析")
@@ -155,7 +155,7 @@ def multi_error_analysis(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    set_seed(42)
+    set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     # multi_params = get_ga_params(df)
     # show_multi_segments(multi_params)
