@@ -9,7 +9,7 @@ from utils.ga import (
     crossover_func, 
     mutate_func
 )
-from utils.data_util import analyze_data, preprocess, calcu_first_over_week, set_seed
+from utils.data_util import preprocess, calcu_first_over_week, set_seed
 from typing import Dict, List, Tuple
 
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
@@ -96,35 +96,8 @@ def evaluate_segments(
     return best_results
 
 
-def error_analysis(df: pd.DataFrame, n_repeats: int = 10, noise_std: float = 0.01):
-    """对Y染色体浓度添加扰动后导出结果"""
-    all_tis = []
-    
-    ori_params = get_ga_params(df)
-    best_ind, _ = run_genetic_algorithm(ori_params, 5, show_progress=False)
-    
-    for i in range(n_repeats):
-        print(f"Running experiment {i+1}/{n_repeats}")
-        df_perturbed = df.copy()
-        noise = np.random.normal(0, noise_std, size=len(df))
-        df_perturbed["Y染色体浓度"] += noise
-        
-        params = get_ga_params(df_perturbed)
-        ti_values = calcu_Ti(best_ind, params)
-        
-        all_tis.append(ti_values)
-    
-    all_tis = np.stack(all_tis, axis=0)
-    
-    return all_tis
-
-
-
 if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_ga_params(df) 
     best_results = evaluate_segments(params) 
-    all_tis = error_analysis(df, n_repeats=10)
-
-    analyze_data(all_tis, "检测孕周阈值误差分析")

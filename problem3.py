@@ -10,12 +10,13 @@ from utils.ga import (
     calcu_Ti,
     calcu_R_CA,
     calcu_R_IVF,
+    calcu_R_GC,
     init_sol_func, 
     roulette_wheel_select, 
     crossover_func, 
     mutate_func
 )
-from utils.data_util import analyze_data, preprocess, calcu_first_over_week, set_seed
+from utils.data_util import preprocess, calcu_first_over_week, set_seed
 from typing import Dict, List, Tuple
 
 
@@ -34,7 +35,8 @@ def get_ga_params(df: pd.DataFrame, n_clusters=3) -> Dict[str, Dict[str, np.ndar
             "bmi": cluster_data["孕妇BMI"].values,
             "week": cluster_data["检测孕周"].values,
             "ivf": cluster_data["IVF妊娠"].values == 3, # IVF(试管婴儿)
-            "ca": cluster_data["染色体的非整倍体"].values
+            "ca": cluster_data["染色体的非整倍体"].values,
+            "gc": cluster_data["GC含量"].values
         }
         
         cluster_groups[f"cluster_{cluster_id}"] = cluster_params
@@ -47,6 +49,7 @@ def fitness_func(
     alpha=10,
     beta=10,
     gamma=10,
+    zeta=10,
 ):
     N_total = np.size(params["bmi"])
     Ni = calcu_Ni(ind, params)
@@ -56,7 +59,8 @@ def fitness_func(
     h = alpha * Ti
     R_ivf = beta * calcu_R_IVF(ind, params)
     R_ca = gamma * calcu_R_CA(ind, params)
-    Z = np.sum(wi * (h + R_ivf + R_ca))
+    R_gc = zeta * calcu_R_GC(ind, params)
+    Z = np.sum(wi * (h + R_ivf + R_ca + R_gc))
     
     return -Z
 
@@ -136,42 +140,9 @@ def show_multi_segments(
     evaluate_segments(cls2, 2, 5)
 
 
-def error_analysis(df: pd.DataFrame, cluster_name: str, n_seg: int, n_repeats: int = 10, noise_std: float = 0.01):
-    """对Y染色体浓度添加扰动后导出结果"""
-    all_tis = []
-    
-    ori_params = get_ga_params(df)[cluster_name]
-    best_ind, _ = run_genetic_algorithm(ori_params, n_seg, show_progress=False)
-    
-    for i in range(n_repeats):
-        print(f"Running experiment {i+1}/{n_repeats}")
-        df_perturbed = df.copy()
-        noise = np.random.normal(0, noise_std, size=len(df))
-        df_perturbed["Y染色体浓度"] += noise
-        
-        params = get_ga_params(df_perturbed)[cluster_name]
-        ti_values = calcu_Ti(best_ind, params)
-        
-        all_tis.append(ti_values)
-    
-    all_tis = np.stack(all_tis, axis=0)
-    
-    return all_tis
-
-def multi_error_analysis(df: pd.DataFrame):
-    tis0 = error_analysis(df, "cluster_0", 2)
-    tis1 = error_analysis(df, "cluster_1", 2)
-    tis2 = error_analysis(df, "cluster_2", 4)
-
-    analyze_data(tis0, "cluster_0 检测孕周阈值误差分析")
-    analyze_data(tis1, "cluster_1 检测孕周阈值误差分析")
-    analyze_data(tis2, "cluster_2 检测孕周阈值误差分析")
-
-
 if __name__ == "__main__":
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     multi_params = get_ga_params(df)
     show_multi_segments(multi_params)
-    multi_error_analysis(df)
 

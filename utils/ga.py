@@ -136,6 +136,21 @@ def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     
     return True
 
+def calcu_R_GC(ind: np.ndarray, params: Dict[str, np.ndarray]) -> np.ndarray:
+    bmi = params["bmi"]
+    gc = params["ca"]
+    n_seg = np.size(ind) - 1
+    R_GC = np.zeros(n_seg)
+    
+    for i in range(n_seg):
+        start_bmi = ind[i]
+        end_bmi = ind[i + 1]
+        mask = (bmi >= start_bmi) & (bmi < end_bmi)
+        R_GC[i] = np.sum(gc[mask] < 0.4)
+        
+    return R_GC 
+
+
 def init_sol_func(params:Dict[str, np.ndarray], n_seg: int):
     bmi = params["bmi"]
     bmi_min, bmi_max = np.min(bmi), np.max(bmi)
