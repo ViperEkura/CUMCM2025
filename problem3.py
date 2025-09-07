@@ -16,7 +16,13 @@ from utils.genetic_algorithm import (
     crossover_func, 
     mutate_func
 )
-from utils.data_util import preprocess, calcu_first_over_week, set_seed
+from utils.data_util import (
+    preprocess, 
+    calcu_first_over_week, 
+    set_seed,
+    sensitivity_analysis,
+    sensitivity_summary
+)
 from typing import Dict, List, Tuple
 
 
@@ -146,3 +152,10 @@ if __name__ == "__main__":
     multi_params = get_ga_params(df)
     show_multi_segments(multi_params)
 
+    n_segments = [2, 2, 4]
+    cls_names = ["cluster_0", "cluster_1", "cluster_2"]
+    
+    for i in range(3):
+        get_ga_params_fn = lambda df: get_ga_params(df)[cls_names[i]]
+        sens_res = sensitivity_analysis(df, n_segments[i], run_genetic_algorithm, get_ga_params_fn, calcu_Ti)
+        sensitivity_summary(sens_res, n_segments[i])
