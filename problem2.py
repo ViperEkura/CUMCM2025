@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from utils.ga import (
+from utils.genetic_algorithm import (
     GeneticAlgorithm, 
     calcu_Ni, 
     calcu_Ti, 

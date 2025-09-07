@@ -251,3 +251,57 @@ def plot_scatter(df, x_col, y_col, show=False, save=True, save_path=None,
         plt.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
     
     plt.close()
+
+
+def plot_sensitivity_results(results, n_segments=5, show=False, save=True, save_path=None):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # TI值变化
+    segments = range(1, n_segments+1)
+    ax1.errorbar(segments, results['positive_perturb']['ti_mean'], 
+                yerr=results['positive_perturb']['ti_std'], 
+                fmt='o-', label='+1% Y染色体浓度', capsize=5)
+    ax1.errorbar(segments, results['original']['ti'], 
+                yerr=0, fmt='s-', label='原始', capsize=5)
+    ax1.errorbar(segments, results['negative_perturb']['ti_mean'], 
+                yerr=results['negative_perturb']['ti_std'], 
+                fmt='o-', label='-1% Y染色体浓度', capsize=5)
+    ax1.set_xlabel('分段')
+    ax1.set_ylabel('TI值')
+    ax1.set_title('Y染色体浓度变化对TI值的影响')
+    ax1.legend()
+    ax1.grid(True)
+    
+    # BMI分段点变化
+    n_bmi_points = len(results['original']['bmi_divisions'])
+    bmi_positions = range(1, n_bmi_points + 1)
+    
+    ax2.errorbar(bmi_positions, results['positive_perturb']['bmi_mean'], 
+                yerr=results['positive_perturb']['bmi_std'], 
+                fmt='o-', label='+1% Y染色体浓度', capsize=5)
+    ax2.errorbar(bmi_positions, results['original']['bmi_divisions'], 
+                yerr=0, fmt='s-', label='原始', capsize=5)
+    ax2.errorbar(bmi_positions, results['negative_perturb']['bmi_mean'], 
+                yerr=results['negative_perturb']['bmi_std'], 
+                fmt='o-', label='-1% Y染色体浓度', capsize=5)
+    ax2.set_xlabel('分段点位置')
+    ax2.set_ylabel('BMI值')
+    ax2.set_title('Y染色体浓度变化对BMI分段点的影响')
+    ax2.legend()
+    ax2.grid(True)
+    
+    plt.tight_layout()
+    
+    if show:
+        plt.show()
+        
+    if save:
+        if save_path is None:
+            save_path = os.path.join('.', 'plots')
+        os.makedirs(save_path, exist_ok=True)
+        filename = f'seg{n_segments}_sensitivity_results.png'
+        plt.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
+    
+    plt.close()
+        
+    plt.close()

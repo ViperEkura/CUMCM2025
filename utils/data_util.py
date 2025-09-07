@@ -4,7 +4,7 @@ import re
 
 from scipy import stats
 from scipy.stats import shapiro, spearmanr
-from typing import List
+from typing import Dict, List
 
 def set_seed(seed=3407):
     np.random.seed(seed)
@@ -264,3 +264,87 @@ def analyze_data(data: np.ndarray, data_type: str ="", start_index: int = 0) -> 
         
         index = start_index + i
         print(f"{index:4d} | {mean:10.4f} | {std:10.4f} | {cv:10.2f} | [{ci_lower:7.4f}, {ci_upper:7.4f}] | {interval_width:10.4f}")
+
+def sensitivity_analysis(
+    df:pd.DataFrame, 
+    n_segments:int, 
+    run_ga_func, 
+    get_params_func, 
+    calc_ti_func, 
+    n_repeats=5, 
+    change_percent=0.01
+):
+    original_params = get_params_func(df)
+    
+    best_ind, _ = run_ga_func(original_params, n_segments, show_progress=False)
+    original_ti = calc_ti_func(best_ind, original_params)
+    
+    results = {
+        'original': {'ti': original_ti, 'bmi_divisions': best_ind},
+        'positive_perturb': {'ti': [], 'bmi_divisions': []},
+        'negative_perturb': {'ti': [], 'bmi_divisions': []}
+    }
+    
+    for i in range(n_repeats):
+        print(f"Running sensitivity analysis {i+1}/{n_repeats}")
+        
+        # 正向扰动 (+1%)
+        df_positive = df.copy()
+        df_positive["Y染色体浓度"] = df_positive["Y染色体浓度"] * (1 + change_percent)
+        positive_params = get_params_func(df_positive)
+        positive_ind, _ = run_ga_func(positive_params, n_segments, show_progress=False)
+        positive_ti = calc_ti_func(positive_ind, positive_params)
+        
+        results['positive_perturb']['ti'].append(positive_ti)
+        results['positive_perturb']['bmi_divisions'].append(positive_ind)
+        
+        # 负向扰动 (-1%)
+        df_negative = df.copy()
+        df_negative["Y染色体浓度"] = df_negative["Y染色体浓度"] * (1 - change_percent)
+        negative_params = get_params_func(df_negative)
+        negative_ind, _ = run_ga_func(negative_params, n_segments, show_progress=False)
+        negative_ti = calc_ti_func(negative_ind, negative_params)
+        
+        results['negative_perturb']['ti'].append(negative_ti)
+        results['negative_perturb']['bmi_divisions'].append(negative_ind)
+    
+    # 计算平均结果
+    for key in ['positive_perturb', 'negative_perturb']:
+        results[key]['ti_mean'] = np.mean(results[key]['ti'], axis=0)
+        results[key]['ti_std'] = np.std(results[key]['ti'], axis=0)
+        results[key]['bmi_mean'] = np.mean(results[key]['bmi_divisions'], axis=0)
+        results[key]['bmi_std'] = np.std(results[key]['bmi_divisions'], axis=0)
+    
+    return results
+
+def sensitivity_summary(results: Dict, n_segments: int):
+    print("="*50)
+    print("灵敏度分析摘要")
+    print("="*50)
+    
+    # TI值变化
+    print("\nTI值变化:")
+    print(f"{'分段':<6} {'原始':<8} {'+1%':<8} {'变化(%)':<8} {'-1%':<8} {'变化(%)':<8}")
+    for i in range(n_segments):
+        orig_ti = results['original']['ti'][i]
+        pos_ti = results['positive_perturb']['ti_mean'][i]
+        neg_ti = results['negative_perturb']['ti_mean'][i]
+        
+        pos_change = (pos_ti - orig_ti) / orig_ti * 100
+        neg_change = (neg_ti - orig_ti) / orig_ti * 100
+        
+        print(f"{i+1:<6} {orig_ti:<8.2f} {pos_ti:<8.2f} {pos_change:<8.2f}% {neg_ti:<8.2f} {neg_change:<8.2f}%")
+    
+    # BMI分段点变化
+    n_bmi_points = len(results['original']['bmi_divisions'])
+    print(f"\nBMI分段点变化 (共{n_bmi_points}个点):")
+    print(f"{'点':<4} {'原始':<8} {'+1%':<8} {'变化(%)':<8} {'-1%':<8} {'变化(%)':<8}")
+    for i in range(n_bmi_points):
+        orig_bmi = results['original']['bmi_divisions'][i]
+        pos_bmi = results['positive_perturb']['bmi_mean'][i]
+        neg_bmi = results['negative_perturb']['bmi_mean'][i]
+        
+        pos_change = (pos_bmi - orig_bmi) / orig_bmi * 100
+        neg_change = (neg_bmi - orig_bmi) / orig_bmi * 100
+        
+        print(f"{i+1:<4} {orig_bmi:<8.2f} {pos_bmi:<8.2f} {pos_change:<8.2f}% {neg_bmi:<8.2f} {neg_change:<8.2f}%")
