@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from utils.data_uitl import preprocess, shapiro_test, spearman_test, custom_statistical_tests
+from utils.data_util import preprocess, shapiro_test, spearman_test, custom_statistical_tests
 from utils.plot_util import plot_distribution, plot_boxplot, plot_spearman_heatmap, plot_qq, plot_predicted_vs_actual
 from utils.regression import BetaRegression
 from sklearn.model_selection import train_test_split

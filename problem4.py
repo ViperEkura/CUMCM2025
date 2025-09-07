@@ -6,6 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
+from utils.data_util import preprocess
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False 
@@ -17,7 +18,7 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def run_decision_tree_classification(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3407, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=19, stratify=y)
     
     model = DecisionTreeClassifier(
         max_depth=5,
