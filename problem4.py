@@ -23,7 +23,7 @@ def run_decision_tree_classification(X, y):
         max_depth=5,
         min_samples_split=5,
         min_samples_leaf=2,
-        random_state=42,
+        random_state=3407,
         criterion='gini'
     )
 

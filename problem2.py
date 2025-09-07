@@ -12,7 +12,6 @@ from utils.ga import (
 from utils.data_uitl import analyze_data, preprocess, calcu_first_over_week, set_seed
 from typing import Dict, List, Tuple
 
-
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
     N_total = np.size(params["bmi"])
     Ni = calcu_Ni(ind, params)

@@ -138,16 +138,18 @@ def valid_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
 
 def init_sol_func(params:Dict[str, np.ndarray], n_seg: int):
     bmi = params["bmi"]
-    
     bmi_min, bmi_max = np.min(bmi), np.max(bmi)
+    
     bmi_div = np.zeros(n_seg + 1)
-    bmi_div[0], bmi_div[-1] = np.min(bmi), np.max(bmi)
-    bmi_div[1:-1] = np.random.uniform(bmi_min + 1e-6, bmi_max - 1e-6, (n_seg - 1,))
-    bmi_div = np.sort(bmi_div, axis=-1)
+    bmi_div[1:] = np.random.dirichlet(np.ones(n_seg))
+    bmi_div = np.cumsum(bmi_div)
+    bmi_div = bmi_div * (bmi_max - bmi_min) + bmi_min
     
     while not valid_func(bmi_div, params):
-        bmi_div[1:-1] = np.random.uniform(bmi_min + 1e-6, bmi_max - 1e-6, (n_seg - 1,))
-        bmi_div = np.sort(bmi_div, axis=-1)
+        bmi_div = np.zeros(n_seg + 1)
+        bmi_div[1:] = np.random.dirichlet(np.ones(n_seg))
+        bmi_div = np.cumsum(bmi_div)
+        bmi_div = bmi_div * (bmi_max - bmi_min) + bmi_min
     
     return bmi_div
 
