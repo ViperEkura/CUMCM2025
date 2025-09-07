@@ -187,32 +187,41 @@ def mutate_func(
     parent: np.ndarray,
     params: Dict[str, np.ndarray], 
     mutation_rate: float = 0.3,
-    max_attempts: int = 2000
+    max_attempts: int = 2000,
+    interval_perturb_strength: float = 0.2
 ):
-    """均匀变异"""
+    """区间扰动变异"""
     n_seg = np.size(parent) - 1
     bmi_min, bmi_max = np.min(params["bmi"]), np.max(params["bmi"])
     
     for _ in range(max_attempts):
         child = parent.copy()
         
-        mutation_points = np.random.choice(range(1, n_seg), 
-                                         size=int(mutation_rate * n_seg), 
-                                         replace=False)
+        intervals = np.diff(child)
+        n_mutations = max(1, int(mutation_rate * n_seg))
+        mutation_indices = np.random.choice(range(n_seg), size=n_mutations, replace=False)
         
-        for i in mutation_points:
-            left_bound = child[i-1] if i > 0 else bmi_min
-            right_bound = child[i+1] if i < n_seg else bmi_max
-            
-            new_value = np.random.uniform(left_bound, right_bound)
-            child[i] = new_value
+        for i in mutation_indices:
+            perturbation = np.random.uniform(
+                1 - interval_perturb_strength, 
+                1 + interval_perturb_strength
+            )
+            intervals[i] *= perturbation
         
-        child = np.sort(child)
-        child[0] = bmi_min
-        child[-1] = bmi_max
+
+        total_range = bmi_max - bmi_min
+        intervals = intervals * (total_range / np.sum(intervals))
         
-        if valid_func(child, params):
-            return child
+        new_points = np.zeros(n_seg + 1)
+        new_points[0] = bmi_min
+        for i in range(1, n_seg + 1):
+            new_points[i] = new_points[i-1] + intervals[i-1]
+        
+        new_points[-1] = bmi_max
+        
+
+        if valid_func(new_points, params):
+            return new_points
     
     return parent
 
