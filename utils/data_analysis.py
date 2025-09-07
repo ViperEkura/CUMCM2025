@@ -1,6 +1,10 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+# 设置中文字体支持
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False 
+
 
 def sensitivity_analysis(df, n_segments, run_ga_func, get_params_func, calc_ti_func, n_repeats=5, change_percent=0.01):
 
@@ -49,14 +53,6 @@ def sensitivity_analysis(df, n_segments, run_ga_func, get_params_func, calc_ti_f
 
 
 def plot_sensitivity_results(results, n_segments=5, save_path='sensitivity_analysis.png'):
-    """
-    绘制灵敏度分析结果
-    
-    参数:
-    results: 灵敏度分析结果
-    n_segments: 分段数量
-    save_path: 保存图像的路径
-    """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
     
     # TI值变化
@@ -75,8 +71,29 @@ def plot_sensitivity_results(results, n_segments=5, save_path='sensitivity_analy
     ax1.legend()
     ax1.grid(True)
     
+    # BMI分段点变化
+    n_bmi_points = len(results['original']['bmi_divisions'])
+    bmi_positions = range(1, n_bmi_points + 1)
+    
+    ax2.errorbar(bmi_positions, results['positive_perturb']['bmi_mean'], 
+                yerr=results['positive_perturb']['bmi_std'], 
+                fmt='o-', label='+1% Y染色体浓度', capsize=5)
+    ax2.errorbar(bmi_positions, results['original']['bmi_divisions'], 
+                yerr=0, fmt='s-', label='原始', capsize=5)
+    ax2.errorbar(bmi_positions, results['negative_perturb']['bmi_mean'], 
+                yerr=results['negative_perturb']['bmi_std'], 
+                fmt='o-', label='-1% Y染色体浓度', capsize=5)
+    ax2.set_xlabel('分段点位置')
+    ax2.set_ylabel('BMI值')
+    ax2.set_title('Y染色体浓度变化对BMI分段点的影响')
+    ax2.legend()
+    ax2.grid(True)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.show()
 
-def sensitivity_summary(results, n_segments=5):
+def sensitivity_summary(results, n_segments):
     """
     打印灵敏度分析摘要
     
