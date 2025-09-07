@@ -154,8 +154,13 @@ if __name__ == "__main__":
 
     n_segments = [2, 2, 4]
     cls_names = ["cluster_0", "cluster_1", "cluster_2"]
+    sens_res_list = []
     
     for i in range(3):
+        print(f"Running for {cls_names[i]}")
         get_ga_params_fn = lambda df: get_ga_params(df)[cls_names[i]]
         sens_res = sensitivity_analysis(df, n_segments[i], run_genetic_algorithm, get_ga_params_fn, calcu_Ti)
-        sensitivity_summary(sens_res, n_segments[i])
+        sens_res_list.append(sens_res)
+    
+    for i in range(3):    
+        sensitivity_summary(sens_res_list[i], n_segments[i])
