@@ -43,7 +43,7 @@ if __name__ == "__main__":
     
     df = pd.read_excel('附件.xlsx', sheet_name=1)
     df = preprocess(df).dropna(subset=["孕妇BMI"])
-    
+
     # 检查数据分布
     print("目标变量分布:")
     print(df[y_col].value_counts())
@@ -82,9 +82,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    
-
-    plt.figure(figsize=(20, 12))
+    plt.figure(figsize=(12, 8))
     tree.plot_tree(model, 
                    feature_names=x_col, 
                    class_names=['正常', '非整倍体'],

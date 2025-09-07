@@ -303,5 +303,3 @@ def plot_sensitivity_results(results, n_segments=5, show=False, save=True, save_
         plt.savefig(os.path.join(save_path, filename), dpi=300, bbox_inches='tight')
     
     plt.close()
-        
-    plt.close()
