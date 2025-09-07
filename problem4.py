@@ -13,10 +13,11 @@ plt.rcParams['axes.unicode_minus'] = False
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     # NA/空值 -> False (0), 有值 -> True (1)
     df["染色体的非整倍体"] = df["染色体的非整倍体"].notna().astype(int)
+    df = df.dropna(subset=["孕妇BMI"])
     return df
 
 def run_decision_tree_classification(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3407, stratify=y)
     
     model = DecisionTreeClassifier(
         max_depth=5,
