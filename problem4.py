@@ -5,17 +5,10 @@ from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-
 from utils.data_util import preprocess
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False 
-
-def preprocess(df: pd.DataFrame) -> pd.DataFrame:
-    # NA/空值 -> False (0), 有值 -> True (1)
-    df["染色体的非整倍体"] = df["染色体的非整倍体"].notna().astype(int)
-    df = df.dropna(subset=["孕妇BMI"])
-    return df
 
 def run_decision_tree_classification(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=19, stratify=y)
@@ -36,20 +29,19 @@ def run_decision_tree_classification(X, y):
     precision = precision_score(y_test, y_pred, zero_division=0)
     recall = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
-
     cm = confusion_matrix(y_test, y_pred)
     
     return model, accuracy, precision, recall, f1, cm, y_pred_proba
 
 if __name__ == "__main__":
-    x_col = ["孕妇BMI", "原始读段数", "在参考基因组上比对的比例", "重复读段的比例","唯一比对的读段数",
+    x_col = ["检测孕周", "孕妇BMI", "原始读段数", "在参考基因组上比对的比例", "重复读段的比例","唯一比对的读段数",
             "GC含量", "13号染色体的Z值", "18号染色体的Z值",  "21号染色体的Z值", "X染色体的Z值",
             "X染色体浓度", "13号染色体的GC含量", "18号染色体的GC含量", "21号染色体的GC含量", "被过滤掉读段数的比例"]
 
     y_col = "染色体的非整倍体"
     
     df = pd.read_excel('附件.xlsx', sheet_name=1)
-    df = preprocess(df)
+    df = preprocess(df).dropna(subset=["孕妇BMI"])
     
     # 检查数据分布
     print("目标变量分布:")
