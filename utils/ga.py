@@ -113,7 +113,7 @@ def calcu_R_IVF(ind: np.ndarray, params: Dict[str, np.ndarray]):
 
 def calcu_R_CA(ind: np.ndarray, params: Dict[str, np.ndarray]):
     bmi = params["bmi"]
-    ivf = params["ca"]
+    ca = params["ca"]
     n_seg = np.size(ind) - 1
     R_CA = np.zeros(n_seg)
     
@@ -121,7 +121,7 @@ def calcu_R_CA(ind: np.ndarray, params: Dict[str, np.ndarray]):
         start_bmi = ind[i]
         end_bmi = ind[i + 1]
         mask = (bmi >= start_bmi) & (bmi < end_bmi)
-        R_CA[i] = np.sum(ivf[mask])
+        R_CA[i] = np.sum(ca[mask])
         
     return R_CA
 
