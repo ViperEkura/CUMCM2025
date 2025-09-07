@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -58,19 +59,29 @@ if __name__ == "__main__":
     print(f"F1分数: {f1:.4f}")
     print(f"\n混淆矩阵:\n{cm}")
     
-    print("\n=== 特征重要性 ===")
+    print("\n=== 绘制特征重要性图 ===")
+
     feature_importance = model.feature_importances_
-    
-    importance_df = pd.DataFrame({
-        '特征': x_col,
-        '重要性': feature_importance
-    })
-    importance_df = importance_df.sort_values('重要性', ascending=False)
-    print(importance_df.head())
-    
-    print(f"\n最重要的5个特征:")
-    for i, row in importance_df.head().iterrows():
-        print(f"{row['特征']}: {row['重要性']:.4f}")
+    sorted_idx = np.argsort(feature_importance)
+    sorted_features = [x_col[i] for i in sorted_idx]
+    sorted_importance = feature_importance[sorted_idx]
+
+
+    plt.figure(figsize=(6, 6))
+    bars = plt.barh(range(len(sorted_features)), sorted_importance, align='center')
+    plt.yticks(range(len(sorted_features)), sorted_features, fontsize=10)
+    plt.xlabel('特征重要性', fontsize=12)
+    plt.title('决策树特征重要性排序', fontsize=14)
+    plt.grid(axis='x', alpha=0.3)
+
+    for i, (bar, importance) in enumerate(zip(bars, sorted_importance)):
+        if importance > 0.01:
+            plt.text(importance + 0.005, i, f'{importance:.3f}', 
+                    va='center', fontsize=9)
+
+    plt.tight_layout()
+    plt.show()
+
     
 
     plt.figure(figsize=(20, 12))
