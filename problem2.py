@@ -9,7 +9,14 @@ from utils.genetic_algorithm import (
     crossover_func, 
     mutate_func
 )
-from utils.data_util import preprocess, calcu_first_over_week, set_seed
+from utils.data_util import (
+    preprocess, 
+    calcu_first_over_week, 
+    set_seed,
+    sensitivity_analysis,
+    sensitivity_summary
+)
+
 from typing import Dict, List, Tuple
 
 def fitness_func(ind: np.ndarray, params: Dict[str, np.ndarray]):
@@ -100,4 +107,8 @@ if __name__ == '__main__':
     set_seed()
     df = preprocess(pd.read_excel('附件.xlsx', sheet_name=0))
     params = get_ga_params(df) 
-    best_results = evaluate_segments(params) 
+    best_results = evaluate_segments(params)
+    
+    n_segments = 5
+    sens_res = sensitivity_analysis(df, n_segments, run_genetic_algorithm, get_ga_params, calcu_Ti)
+    sensitivity_summary(sens_res, n_segments)
