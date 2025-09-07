@@ -1,7 +1,7 @@
 
 $$
 \begin{aligned}
-& \min Z = \sum_{i=1}^{n} w_i (h(T_i) + R^{IVF} + R^{CA})\\
+& \min Z = \sum_{i=1}^{n} w_i (h(T_i) + R^{IVF} + R^{CA} +  R^{GC}) \\
 & \text{s.t.} 
 \begin{cases} 
 & (1)\quad b_0 < b_1 < b_2 < \cdots < b_{n-1} < b_n \\
@@ -12,7 +12,8 @@ $$
 & (6)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
 & (7)\quad h(T_i) =  \alpha T_i \\
 & (8)\quad R^{IVF} = \beta n_{i}^{IVF} \\
-& (9)\quad R^{CA} = \gamma n_{i}^{CA}
+& (9)\quad R^{CA} = \gamma n_{i}^{CA} \\
+& (10)\quad R^{GC} = \zeta n_{i}^{GC}
 \end{cases}
 \end{aligned}
 $$
@@ -27,5 +28,5 @@ $$
   - $N_i$ : 第 $i$ 个区间内部的样本数（给定）
   - $N$:  总共样本数（给定）
   - $T_i$: BMI 的分段区间内选定的t检测阈值（给定） 
-  - $\alpha, \beta, \gamma$: 待确定的常量
+  - $\alpha, \beta, \gamma, \zeta$: 待确定的常量
 
