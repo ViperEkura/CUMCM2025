@@ -85,13 +85,13 @@ def plot_decision_tree_results(model, x_col):
     plt.show()
 
     if model.tree_.node_count <= 50:
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(12, 6))
         tree.plot_tree(model, 
                        feature_names=x_col, 
                        class_names=['正常', '非整倍体'],
                        filled=True, 
                        rounded=True,
-                       fontsize=8)
+                       fontsize=7)
         plt.title("最优决策树结构")
         plt.show()
     else:
