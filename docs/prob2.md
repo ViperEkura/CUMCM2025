@@ -9,10 +9,10 @@ $$
 & (2)\quad 10 \leq T_i \leq 25, \quad \forall i = 1,2,\ldots,n \\
 & (3)\quad N_i > 25, \quad \forall i = 1,2,\ldots,n \\
 & (4)\quad P(y > 0.04| T_i) > 0.9 \\
-& (4)\quad w_i = \frac{N_i}{N}, \quad \forall i = 1,2,\ldots,n \\
-& (5)\quad g(T_i) = T_i - 10
+& (5)\quad w_i = \frac{N_i}{N}, \quad \forall i = 1,2,\ldots,n \\
+& (6)\quad g(T_i) = T_i - 10
 \quad \forall i = 1,2,\ldots,n \\
-& (6)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
+& (7)\quad b_0 = BMI_{min},\quad b_n = BMI_{max} \\
 \end{cases}
 \end{aligned}
 $$
